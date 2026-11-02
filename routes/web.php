@@ -1,15 +1,19 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BenihController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PanenController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\PengujianMutuController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\StokBenihController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => redirect()->route('login'));
 
-// Route Guest (Hanya bisa diakses jika belum login)
+// Route Guest
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
@@ -20,28 +24,43 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Khusus Admin Pusat saja
+// Route Authenticated (Bisa diakses SEMUA role termasuk Pimpinan)
+Route::middleware(['auth'])->group(function () {
+
+    // Dashboard & PDF (Read-Only)
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/rekap-bbpsip', [ReportController::class, 'rekapBbpsip'])->name('report.rekap');
+    Route::get('/report/rekap/pdf', [ReportController::class, 'rekapPdf'])->name('report.rekap.pdf');
+    Route::get('/report/panen/pdf', [ReportController::class, 'panenPdf'])->name('report.panen.pdf');
+    Route::get('/report/stok/pdf', [ReportController::class, 'stokPdf'])->name('report.stok.pdf');
+
+    // Read-Only Index & Riwayat
+    Route::get('/panen', [PanenController::class, 'index'])->name('panen.index');
+    Route::get('/pengujian-mutu', [PengujianMutuController::class, 'index'])->name('pengujian.index');
+    Route::get('/stok-benih', [StokBenihController::class, 'index'])->name('stok.index');
+    Route::get('/stok-benih/riwayat', [StokBenihController::class, 'riwayatMutasi'])->name('stok.riwayat');
+
+    // Admin Pusat Management
     Route::middleware(['role:admin_pusat'])->group(function () {
         Route::resource('users', UserController::class);
         Route::resource('roles', RoleController::class)->except(['show']);
+        Route::resource('benih', BenihController::class)->except(['show']);
     });
 
-// Route Authenticated (Sudah Login)
-Route::middleware(['auth'])->group(function () {
-    Route::middleware(['permission:view dashboard'])->group(function () {
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-        Route::get('/panen', [PanenController::class, 'index'])->name('panen.index');
-    });
-
-    Route::middleware(['permission:create panen'])->group(function () {
+    // Fitur Input/Create Data (Hanya untuk Admin Pusat & Petugas Provinsi)
+    Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
+        // Panen
         Route::get('/panen/create', [PanenController::class, 'create'])->name('panen.create');
         Route::post('/panen', [PanenController::class, 'store'])->name('panen.store');
-    });
-
-    Route::middleware(['permission:delete panen'])->group(function () {
         Route::delete('/panen/{panen}', [PanenController::class, 'destroy'])->name('panen.destroy');
-    });
 
-    Route::get('/panen/export/excel', [PanenController::class, 'exportExcel'])->name('panen.export.excel');
-    Route::get('/panen/export/pdf', [PanenController::class, 'exportPdf'])->name('panen.export.pdf');
+        // Uji Mutu
+        Route::get('/pengujian-mutu/create', [PengujianMutuController::class, 'create'])->name('pengujian.create');
+        Route::post('/pengujian-mutu', [PengujianMutuController::class, 'store'])->name('pengujian.store');
+
+        // Transaksi Stok Keluar
+        Route::get('/stok-benih/keluar', [StokBenihController::class, 'createKeluar'])->name('stok.keluar.create');
+        Route::post('/stok-benih/keluar', [StokBenihController::class, 'storeKeluar'])->name('stok.keluar.store');
+    });
+    
 });

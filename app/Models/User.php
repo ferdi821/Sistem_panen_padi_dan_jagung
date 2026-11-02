@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Provinsi;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,5 +20,14 @@ class User extends Authenticatable {
 
     public function catatanPanens(): HasMany {
         return $this->hasMany(CatatanPanen::class);
+    }
+
+    // Tambahan relasi aktivitas pengujian & transaksi
+    public function pengujianMutus(): HasMany {
+        return $this->hasMany(PengujianMutuBenih::class);
+    }
+
+    public function transaksiStoks(): HasMany {
+        return $this->hasMany(TransaksiStokBenih::class);
     }
 }

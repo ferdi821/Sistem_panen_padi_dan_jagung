@@ -10,12 +10,6 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function __construct()
-    {
-        // Memastikan seluruh fitur manajemen user hanya bisa diakses oleh role admin_pusat
-        $this->middleware(['auth', 'role:admin_pusat']);
-    }
-
     public function index()
     {
         $users = User::with(['roles', 'provinsi'])->latest()->paginate(10);

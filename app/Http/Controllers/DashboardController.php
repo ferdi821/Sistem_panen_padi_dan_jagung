@@ -3,34 +3,68 @@
 namespace App\Http\Controllers;
 
 use App\Models\CatatanPanen;
-use App\Models\Provinsi;
+use App\Models\StokBenih;
+use App\Models\TransaksiStokBenih;
+use App\Models\Benih;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
-class DashboardController extends Controller {
-    public function index() {
+class DashboardController extends Controller
+{
+    public function index()
+    {
         $user = auth()->user();
-        $query = CatatanPanen::query();
 
-        // Jika petugas provinsi, batasi hanya provinsi miliknya
-        if ($user->hasRole('petugas_provinsi')) {
-            $query->where('provinsi_id', $user->provinsi_id);
+        // Query dasar
+        $queryPanen = CatatanPanen::query();
+        $queryStok = StokBenih::query();
+        $queryTransaksi = TransaksiStokBenih::query();
+
+        // Isolasi data khusus Petugas Provinsi
+        if ($user->hasRole('petugas_provinsi') && $user->provinsi_id) {
+            $queryPanen->where('provinsi_id', $user->provinsi_id);
+            $queryStok->where('provinsi_id', $user->provinsi_id);
+            $queryTransaksi->whereHas('stokBenih', function ($q) use ($user) {
+                $q->where('provinsi_id', $user->provinsi_id);
+            });
         }
 
-        $totalPadi = (clone $query)->where('komoditas', 'padi')->sum('jumlah_panen_ton');
-        $totalJagung = (clone $query)->where('komoditas', 'jagung')->sum('jumlah_panen_ton');
-        $totalLuasLahan = (clone $query)->sum('luas_lahan_hektar');
+        // Total Produksi Padi 
+        $totalPadi = (clone $queryPanen)->sum('jumlah_panen_ton');
 
-        // Rekapitulasi untuk Admin Pusat dan Pimpinan
-        $ringkasanProvinsi = null;
-        if ($user->hasAnyRole(['admin_pusat', 'pimpinan'])) {
-            $ringkasanProvinsi = Provinsi::withSum(['catatanPanens as total_padi' => function ($q) {
-                $q->where('komoditas', 'padi');
-            }], 'jumlah_panen_ton')
-            ->withSum(['catatanPanens as total_jagung' => function ($q) {
-                $q->where('komoditas', 'jagung');
-            }], 'jumlah_panen_ton')
-            ->get();
+        // Total Produksi Jagung 
+        $totalJagung = 0; 
+
+        // Total Persediaan Benih di Gudang (Kg)
+        $totalStokKg = (clone $queryStok)->sum('jumlah_stok_kg');
+
+        // Total Varietas Master Benih
+        $totalVarietas = 0;
+        try {
+            if (class_exists(\App\Models\Benih::class)) {
+                $totalVarietas = \App\Models\Benih::count();
+            } elseif (Schema::hasTable('benihs')) {
+                $totalVarietas = DB::table('benihs')->count();
+            }
+        } catch (\Exception $e) {
+            $totalVarietas = 0;
         }
 
-        return view('dashboard.index', compact('totalPadi', 'totalJagung', 'totalLuasLahan', 'ringkasanProvinsi'));
+        // Akumulasi Stok Masuk & Keluar (Kg)
+        $stokMasukKg = (clone $queryTransaksi)->where('jenis_transaksi', 'masuk')->sum('jumlah_kg');
+        $stokKeluarKg = (clone $queryTransaksi)->where('jenis_transaksi', 'keluar')->sum('jumlah_kg');
+
+        // 5 Aktivitas Panen Terbaru
+        $panenTerbaru = (clone $queryPanen)->with('provinsi')->latest()->take(5)->get();
+
+        return view('dashboard.index', compact(
+            'totalPadi',
+            'totalJagung',
+            'totalStokKg',
+            'totalVarietas',
+            'stokMasukKg',
+            'stokKeluarKg',
+            'panenTerbaru'
+        ));
     }
 }

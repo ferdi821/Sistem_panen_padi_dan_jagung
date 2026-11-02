@@ -2,25 +2,28 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class CatatanPanen extends Model {
-    protected $fillable = [
-        'provinsi_id',
-        'user_id',
-        'komoditas',
-        'tanggal_panen',
-        'luas_lahan_hektar',
-        'jumlah_panen_ton',
-        'catatan'
-    ];
+class CatatanPanen extends Model
+{
+    use HasFactory;
 
-    public function provinsi(): BelongsTo {
-        return $this->belongsTo(Provinsi::class);
+    protected $guarded = ['id'];
+
+    public function provinsi()
+    {
+        return $this->belongsTo(Provinsi::class, 'provinsi_id');
     }
 
-    public function user(): BelongsTo {
-        return $this->belongsTo(User::class);
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    // Tambahan relasi ke pengujian mutu benih
+    public function pengujianMutus()
+    {
+        return $this->hasMany(PengujianMutuBenih::class, 'catatan_panen_id');
     }
 }

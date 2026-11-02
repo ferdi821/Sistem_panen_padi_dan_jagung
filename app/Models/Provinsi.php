@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\CatatanPanen;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -15,5 +14,10 @@ class Provinsi extends Model {
 
     public function catatanPanens(): HasMany {
         return $this->hasMany(CatatanPanen::class);
+    }
+
+    // Tambahan relasi ke stok benih wilayah
+    public function stokBenihs(): HasMany {
+        return $this->hasMany(StokBenih::class);
     }
 }

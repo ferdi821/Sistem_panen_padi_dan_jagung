@@ -7,8 +7,10 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
-class RoleAndPermissionSeeder extends Seeder {
-    public function run(): void {
+class RoleAndPermissionSeeder extends Seeder 
+{
+    public function run(): void 
+    {
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
