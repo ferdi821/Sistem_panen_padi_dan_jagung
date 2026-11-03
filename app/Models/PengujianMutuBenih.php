@@ -9,7 +9,18 @@ class PengujianMutuBenih extends Model
 {
     use HasFactory;
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'catatan_panen_id',
+        'benih_id',
+        'user_id',
+        'tanggal_uji',
+        'volume_sampel_kg',
+        'kadar_air_persen',
+        'daya_tumbuh_persen',
+        'jumlah_lolos_kg', // DIUBAH KE INI SUPAYA KLOP DENGAN DATABASE & CONTROLLER
+        'status_kelayakan',
+        'catatan_pengujian',
+    ];
 
     public function catatanPanen()
     {

@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Benih;
-use App\Models\CatatanPanen;
 use App\Models\PengujianMutuBenih;
-use App\Models\StokBenih;
-use App\Models\TransaksiStokBenih;
+use App\Models\CatatanPanen;
+use App\Models\Benih;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class PengujianMutuController extends Controller
 {
@@ -17,26 +14,27 @@ class PengujianMutuController extends Controller
         $user = auth()->user();
         $query = PengujianMutuBenih::with(['catatanPanen.provinsi', 'benih', 'user']);
 
-        if ($user->hasRole('petugas_provinsi')) {
+        if ($user && method_exists($user, 'hasRole') && $user->hasRole('petugas_provinsi') && $user->provinsi_id) {
             $query->whereHas('catatanPanen', function ($q) use ($user) {
                 $q->where('provinsi_id', $user->provinsi_id);
             });
         }
 
-        $pengujians = $query->latest()->paginate(10);
-        return view('pengujian.index', compact('pengujians'));
+        $pengujianMutus = $query->latest()->get();
+
+        return view('pengujian.index', compact('pengujianMutus'));
     }
 
     public function create()
     {
         $user = auth()->user();
-        $panenQuery = CatatanPanen::with('provinsi');
+        $queryPanen = CatatanPanen::query();
 
-        if ($user->hasRole('petugas_provinsi')) {
-            $panenQuery->where('provinsi_id', $user->provinsi_id);
+        if ($user && method_exists($user, 'hasRole') && $user->hasRole('petugas_provinsi') && $user->provinsi_id) {
+            $queryPanen->where('provinsi_id', $user->provinsi_id);
         }
 
-        $catatanPanens = $panenQuery->latest()->get();
+        $catatanPanens = $queryPanen->latest()->get();
         $benihs = Benih::all();
 
         return view('pengujian.create', compact('catatanPanens', 'benihs'));
@@ -44,56 +42,85 @@ class PengujianMutuController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'catatan_panen_id'  => 'required|exists:catatan_panens,id',
-            'benih_id'          => 'required|exists:benihs,id',
-            'tanggal_uji'       => 'required|date',
-            'volume_sampel_kg'  => 'required|numeric|min:0.1',
-            'kadar_air_persen'  => 'required|numeric|min:0|max:100',
-            'daya_tumbuh_persen'=> 'required|numeric|min:0|max:100',
-            'jumlah_lolos_kg'   => 'required|numeric|min:0',
-            'status_kelayakan'  => 'required|in:proses,layak,tidak_layak',
-            'catatan_pengujian' => 'nullable|string',
+        $request->validate([
+            'catatan_panen_id' => 'required|exists:catatan_panens,id',
+            'benih_id' => 'required|exists:benihs,id',
+            'kadar_air_persen' => 'required|numeric',
+            'daya_tumbuh_persen' => 'required|numeric',
+            'jumlah_lolos_kg' => 'required|numeric',
+            'status_kelayakan' => 'required|string',
         ]);
 
-        DB::transaction(function () use ($validated) {
-            $user = auth()->user();
-            $validated['user_id'] = $user->id;
+        PengujianMutuBenih::create([
+            'catatan_panen_id' => $request->catatan_panen_id,
+            'benih_id' => $request->benih_id,
+            'user_id' => auth()->id(),
+            'tanggal_uji' => $request->tanggal_uji ?? now(),
+            'volume_sampel_kg' => $request->volume_sampel_kg ?? 0,
+            'kadar_air_persen' => $request->kadar_air_persen,
+            'daya_tumbuh_persen' => $request->daya_tumbuh_persen,
+            'jumlah_lolos_kg' => $request->jumlah_lolos_kg, // Sesuai kolom database: jumlah_lolos_kg
+            'status_kelayakan' => $request->status_kelayakan,
+            'catatan_pengujian' => $request->catatan_pengujian,
+        ]);
 
-            $pengujian = PengujianMutuBenih::create($validated);
-            $panen = CatatanPanen::findOrFail($validated['catatan_panen_id']);
+        return redirect()->route('pengujian.index')->with('success', 'Data pengujian mutu berhasil ditambahkan.');
+    }
 
-            // Jika status LAYAK -> Tambahkan ke Stok Benih secara otomatis (DB Transaction)
-            if ($validated['status_kelayakan'] === 'layak' && $validated['jumlah_lolos_kg'] > 0) {
-                $stok = StokBenih::firstOrCreate(
-                    [
-                        'provinsi_id' => $panen->provinsi_id,
-                        'benih_id'    => $validated['benih_id'],
-                    ],
-                    ['jumlah_stok_kg' => 0]
-                );
+    public function edit($id)
+    {
+        $pengujianMutu = PengujianMutuBenih::findOrFail($id);
+        $user = auth()->user();
+        
+        $queryPanen = CatatanPanen::query();
+        if ($user && method_exists($user, 'hasRole') && $user->hasRole('petugas_provinsi') && $user->provinsi_id) {
+            $queryPanen->where('provinsi_id', $user->provinsi_id);
+        }
+        $catatanPanens = $queryPanen->latest()->get();
+        $benihs = Benih::all();
 
-                $stokSebelum = $stok->jumlah_stok_kg;
-                $stokSesudah = $stokSebelum + $validated['jumlah_lolos_kg'];
+        return view('pengujian.edit', compact('pengujianMutu', 'catatanPanens', 'benihs'));
+    }
 
-                $stok->update(['jumlah_stok_kg' => $stokSesudah]);
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'benih_id' => 'required|exists:benihs,id',
+            'kadar_air_persen' => 'required|numeric',
+            'daya_tumbuh_persen' => 'required|numeric',
+            'jumlah_lolos_kg' => 'required|numeric',
+            'status' => 'required|string',
+        ]);
 
-                // Catat mutasi transaksi stok masuk
-                TransaksiStokBenih::create([
-                    'stok_benih_id'     => $stok->id,
-                    'pengujian_mutu_id' => $pengujian->id,
-                    'user_id'           => $user->id,
-                    'jenis_transaksi'   => 'masuk',
-                    'sumber_tujuan'     => 'Hasil Konversi Panen #' . $panen->id,
-                    'jumlah_kg'         => $validated['jumlah_lolos_kg'],
-                    'stok_sebelum'      => $stokSebelum,
-                    'stok_sesudah'      => $stokSesudah,
-                    'tanggal_transaksi' => $validated['tanggal_uji'],
-                    'keterangan'        => 'Otomatis dari pengujian mutu panen layak.',
-                ]);
-            }
-        });
+        $pengujianMutu = PengujianMutuBenih::findOrFail($id);
 
-        return redirect()->route('pengujian.index')->with('success', 'Data Pengujian Mutu berhasil disimpan!');
+        $statusInput = strtoupper(trim($request->status));
+        
+        // Mapping status yang lebih aman dan fleksibel
+        if (str_contains($statusInput, 'LAYAK') && !str_contains($statusInput, 'TIDAK')) {
+            $statusVal = 'layak';
+        } elseif (str_contains($statusInput, 'TIDAK')) {
+            $statusVal = 'tidak_layak';
+        } else {
+            $statusVal = 'proses';
+        }
+
+        $pengujianMutu->update([
+            'benih_id' => $request->benih_id,
+            'kadar_air_persen' => $request->kadar_air_persen,
+            'daya_tumbuh_persen' => $request->daya_tumbuh_persen,
+            'jumlah_lolos_kg' => $request->jumlah_lolos_kg,
+            'status_kelayakan' => $statusVal,
+        ]);
+
+        return redirect()->route('pengujian.index')->with('success', 'Data pengujian mutu berhasil diperbarui.');
+    }
+
+    public function destroy($id)
+    {
+        $pengujianMutu = PengujianMutuBenih::findOrFail($id);
+        $pengujianMutu->delete();
+
+        return redirect()->route('pengujian.index')->with('success', 'Data pengujian mutu berhasil dihapus.');
     }
 }

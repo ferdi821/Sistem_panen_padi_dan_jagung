@@ -47,20 +47,23 @@ Route::middleware(['auth'])->group(function () {
         Route::resource('benih', BenihController::class)->except(['show']);
     });
 
-    // Fitur Input/Create Data (Hanya untuk Admin Pusat & Petugas Provinsi)
-    Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
-        // Panen
-        Route::get('/panen/create', [PanenController::class, 'create'])->name('panen.create');
-        Route::post('/panen', [PanenController::class, 'store'])->name('panen.store');
-        Route::delete('/panen/{panen}', [PanenController::class, 'destroy'])->name('panen.destroy');
+   // Fitur Input/Create Data & Manajemen Uji Mutu (Hanya untuk Admin Pusat & Petugas Provinsi)
+   Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
+    // Panen
+    Route::get('/panen/create', [PanenController::class, 'create'])->name('panen.create');
+    Route::post('/panen', [PanenController::class, 'store'])->name('panen.store');
+    Route::delete('/panen/{panen}', [PanenController::class, 'destroy'])->name('panen.destroy');
 
-        // Uji Mutu
-        Route::get('/pengujian-mutu/create', [PengujianMutuController::class, 'create'])->name('pengujian.create');
-        Route::post('/pengujian-mutu', [PengujianMutuController::class, 'store'])->name('pengujian.store');
+    // Uji Mutu (Lengkap dengan Edit, Update, & Destroy)
+    Route::get('/pengujian-mutu/create', [PengujianMutuController::class, 'create'])->name('pengujian.create');
+    Route::post('/pengujian-mutu', [PengujianMutuController::class, 'store'])->name('pengujian.store');
+    Route::get('/pengujian-mutu/{id}/edit', [PengujianMutuController::class, 'edit'])->name('pengujian.edit');
+    Route::put('/pengujian-mutu/{id}', [PengujianMutuController::class, 'update'])->name('pengujian.update');
+    Route::delete('/pengujian-mutu/{id}', [PengujianMutuController::class, 'destroy'])->name('pengujian.destroy');
 
-        // Transaksi Stok Keluar
-        Route::get('/stok-benih/keluar', [StokBenihController::class, 'createKeluar'])->name('stok.keluar.create');
-        Route::post('/stok-benih/keluar', [StokBenihController::class, 'storeKeluar'])->name('stok.keluar.store');
-    });
+    // Transaksi Stok Keluar
+    Route::get('/stok-benih/keluar', [StokBenihController::class, 'createKeluar'])->name('stok.keluar.create');
+    Route::post('/stok-benih/keluar', [StokBenihController::class, 'storeKeluar'])->name('stok.keluar.store');
+});
     
 });
