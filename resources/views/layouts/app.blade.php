@@ -1,244 +1,394 @@
+@php
+    $currentUser = auth()->user();
+    $userName = $currentUser->name ?? 'Administrator';
+    $userInitial = strtoupper(substr($userName, 0, 1));
+    
+    $userRole = 'ADMIN';
+    if ($currentUser) {
+        if (method_exists($currentUser, 'getRoleNames') && $currentUser->getRoleNames()->isNotEmpty()) {
+            $userRole = strtoupper($currentUser->getRoleNames()->first());
+        } elseif (isset($currentUser->role) && !empty($currentUser->role)) {
+            $userRole = strtoupper($currentUser->role);
+        }
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ config('app.name', 'SIPANEN & STOK BENIH') }}</title>
-    <!-- Bootstrap 5 CSS & Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <title>@yield('title', 'SIPANEN - Sistem Informasi Pangan & Stok Benih')</title>
+
+    <!-- Bootstrap 5 & Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     
+    <!-- Google Font: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
+        :root {
+            --primary-green: #106742;
+            --primary-green-hover: #0c5234;
+            --bg-light: #f4f7f4;
+            --sidebar-width: 260px;
+            --sidebar-collapsed-width: 72px;
+        }
+
         body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-light);
+            color: #2c3e50;
             overflow-x: hidden;
         }
-        .wrapper {
-            display: flex;
-            width: 100%;
-            min-height: 100vh;
-        }
-        /* Sidebar Navigation Left */
+
+        /* Sidebar Styling (Hijau Gelap Khas SIPANEN) */
         #sidebar {
-            min-width: 285px;
-            max-width: 285px;
-            background-color: #154d19;
-            color: #fff;
-            transition: all 0.3s;
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            background: #106742;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
             display: flex;
             flex-direction: column;
         }
-        #sidebar .sidebar-header {
-            padding: 24px 22px;
-            background-color: #0d3810;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+
+        #sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
         }
-        #sidebar .sidebar-header h5 {
-            font-size: 1.35rem;
-            letter-spacing: 0.5px;
-        }
-        #sidebar .sidebar-header small {
-            font-size: 0.85rem;
-        }
-        #sidebar ul.components {
-            padding: 15px 0;
-        }
-        #sidebar ul li a {
-            padding: 14px 22px;
-            font-size: 1.05rem;
+
+        /* Header Logo Sidebar */
+        .sidebar-header {
+            padding: 1rem;
             display: flex;
             align-items: center;
-            color: rgba(255, 255, 255, 0.88);
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            height: 70px;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
             text-decoration: none;
-            transition: 0.2s ease-in-out;
-            border-left: 5px solid transparent;
-        }
-        #sidebar ul li a i {
-            font-size: 1.25rem;
-            margin-right: 12px !important;
-        }
-        #sidebar ul li a:hover, 
-        #sidebar ul li a.active {
             color: #ffffff;
-            background-color: #236c28;
-            font-weight: 600;
-            border-left: 5px solid #81c784;
+            overflow: hidden;
         }
-        #sidebar .nav-section {
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: #a5d6a7;
-            padding: 20px 22px 8px 22px;
-            font-weight: 700;
+
+        .sidebar-brand-img {
+            height: 40px;
+            width: auto;
+            max-width: 45px;
+            object-fit: contain;
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
         }
-        /* Main Content Area */
-        #content {
-            width: 100%;
-            padding: 25px 30px;
-            min-height: 100vh;
+
+        .sidebar-brand-text {
             display: flex;
             flex-direction: column;
+            line-height: 1.2;
+            transition: opacity 0.2s ease;
+            white-space: nowrap;
         }
-        .top-navbar {
-            background-color: #fff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 12px 30px;
-            margin: -25px -30px 25px -30px;
+
+        .sidebar-brand-text small {
+            color: rgba(255, 255, 255, 0.7) !important;
         }
-        .user-badge {
-            background-color: #e8f5e9;
-            color: #1b5e20;
+
+        #sidebar.collapsed .sidebar-brand-text,
+        #sidebar.collapsed .sidebar-category,
+        #sidebar.collapsed .nav-text,
+        #sidebar.collapsed .user-info-text {
+            display: none !important;
+        }
+
+        /* Navigation Links */
+        .sidebar-nav {
+            padding: 1rem 0.75rem;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .sidebar-category {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 0.5px;
+            margin: 1.25rem 0 0.5rem 0.75rem;
+        }
+
+        .nav-item-link {
+            display: flex;
+            align-items: center;
+            padding: 0.65rem 0.85rem;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            border-radius: 12px;
+            font-size: 0.9rem;
             font-weight: 600;
-            border-radius: 20px;
-            padding: 5px 15px;
+            margin-bottom: 0.25rem;
+            transition: all 0.2s ease;
         }
-        footer {
-            margin-top: auto;
-            padding-top: 20px;
-            color: #777;
-            font-size: 0.85rem;
+
+        .nav-item-link i {
+            font-size: 1.15rem;
+            min-width: 24px;
+            text-align: center;
+            margin-right: 0.75rem;
+            color: rgba(255, 255, 255, 0.75);
+            transition: color 0.2s ease;
         }
-        /* Wrapper khusus Auth/Guest agar kartu login centered & presisi */
-        .auth-container {
+
+        #sidebar.collapsed .nav-item-link {
+            justify-content: center;
+            padding: 0.75rem 0;
+        }
+
+        #sidebar.collapsed .nav-item-link i {
+            margin-right: 0;
+        }
+
+        .nav-item-link:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+        }
+
+        .nav-item-link:hover i {
+            color: #ffffff;
+        }
+
+        .nav-item-link.active {
+            background-color: #ffffff;
+            color: #106742;
+        }
+
+        .nav-item-link.active i {
+            color: #106742;
+        }
+
+        /* User Profile Footer */
+        .sidebar-footer {
+            padding: 0.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 0.75rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+
+        #sidebar.collapsed .user-card {
+            justify-content: center;
+            padding: 0.5rem 0;
+            background: transparent;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background-color: #ffffff;
+            color: #106742;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-grow: 1;
-            width: 100%;
-            padding: 30px 0;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .user-info-text .fw-bold {
+            color: #ffffff;
+        }
+
+        .user-info-text small {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+
+        /* Main Content Body Wrapper */
+        #main-wrapper {
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #sidebar.collapsed ~ #main-wrapper {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+
+        /* Topbar Header */
+        .topbar {
+            background: #ffffff;
+            border-bottom: 1px solid #e9ecef;
+            padding: 0.85rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 70px;
+        }
+
+        .topbar-badge {
+            background-color: #f1f5f3;
+            border-radius: 50px;
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
     </style>
 </head>
 <body>
 
-<div class="wrapper">
-    @auth
-    <!-- SIDEBAR KIRI (Hanya muncul ketika sudah Login) -->
-    <nav id="sidebar">
+    <!-- SIDEBAR -->
+    <aside id="sidebar">
+        <!-- Logo & Brand Header -->
         <div class="sidebar-header">
-            <h5 class="mb-0 fw-bold"><i class="bi bi-tree-fill me-2"></i>SIPANEN</h5>
-            <small class="text-white-50">& Stok Benih Nasional</small>
+            <a href="{{ route('dashboard') }}" class="sidebar-brand">
+                <img src="{{ asset('images/logo-removebg-preview.png') }}" 
+                     alt="CTC Logo" 
+                     class="sidebar-brand-img"
+                     onerror="this.onerror=null; this.src='{{ asset('images/logo.png') }}';">
+                
+                <div class="sidebar-brand-text">
+                    <span class="fw-bold fs-6">SIPANEN</span>
+                    <small class="text-white-50" style="font-size: 0.65rem;">PT CIPTA TEKNOLOGI CENDEKIA</small>
+                </div>
+            </a>
+            <button id="sidebarToggle" class="btn btn-sm btn-outline-light border-0">
+                <i class="bi bi-list fs-5"></i>
+            </button>
         </div>
 
-        <ul class="list-unstyled components mb-auto">
-            <div class="nav-section">Utama</div>
-            <li>
-                <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('report.rekap') }}" class="{{ request()->routeIs('report.rekap') ? 'active' : '' }}">
-                    <i class="bi bi-table me-2"></i> Rekap BBPSIP
-                </a>
-            </li>
+        <!-- Navigation Links -->
+        <nav class="sidebar-nav">
+            <a href="{{ route('dashboard') }}" class="nav-item-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="bi bi-speedometer2"></i>
+                <span class="nav-text">Dashboard</span>
+            </a>
 
-            <div class="nav-section">Data Transaksi</div>
-            <li>
-                <a href="{{ route('panen.index') }}" class="{{ request()->routeIs('panen.*') ? 'active' : '' }}">
-                    <i class="bi bi-journal-text me-2"></i> Data Panen
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('pengujian.index') }}" class="{{ request()->routeIs('pengujian.*') ? 'active' : '' }}">
-                    <i class="bi bi-patch-check me-2"></i> Uji Mutu Benih
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('stok.index') }}" class="{{ request()->routeIs('stok.index') ? 'active' : '' }}">
-                    <i class="bi bi-boxes me-2"></i> Stok Benih Wilayah
-                </a>
-            </li>
-            
+            @hasrole('admin_pusat')
+            <div class="sidebar-category">MASTER DATA</div>
+            <a href="{{ route('users.index') }}" class="nav-item-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                <i class="bi bi-people"></i>
+                <span class="nav-text">Manajemen User</span>
+            </a>
+            <a href="{{ route('benih.index') }}" class="nav-item-link {{ request()->routeIs('benih.*') ? 'active' : '' }}">
+                <i class="bi bi-tags"></i>
+                <span class="nav-text">Varietas Benih</span>
+            </a>
+            @endhasrole
+
+            <div class="sidebar-category">DATA & TRANSAKSI</div>
+            <a href="{{ route('panen.index') }}" class="nav-item-link {{ request()->routeIs('panen.*') ? 'active' : '' }}">
+                <i class="bi bi-journal-text"></i>
+                <span class="nav-text">Data Panen</span>
+            </a>
+            <a href="{{ route('pengujian.index') }}" class="nav-item-link {{ request()->routeIs('pengujian.*') ? 'active' : '' }}">
+                <i class="bi bi-patch-check"></i>
+                <span class="nav-text">Uji Mutu Benih</span>
+            </a>
+            <a href="{{ route('stok.index') }}" class="nav-item-link {{ request()->routeIs('stok.index') ? 'active' : '' }}">
+                <i class="bi bi-boxes"></i>
+                <span class="nav-text">Stok Benih Wilayah</span>
+            </a>
             @hasanyrole('admin_pusat|petugas_provinsi')
-            <li>
-                <a href="{{ route('stok.keluar.create') }}" class="{{ request()->routeIs('stok.keluar.*') ? 'active' : '' }}">
-                    <i class="bi bi-box-arrow-up-right me-2"></i> Stok Keluar / Distribusi
-                </a>
-            </li>
+            <a href="{{ route('stok.keluar.create') }}" class="nav-item-link {{ request()->routeIs('stok.keluar.*') ? 'active' : '' }}">
+                <i class="bi bi-box-arrow-up-right"></i>
+                <span class="nav-text">Stok Keluar / Distribusi</span>
+            </a>
             @endhasanyrole
+            <a href="{{ route('stok.riwayat') }}" class="nav-item-link {{ request()->routeIs('stok.riwayat') ? 'active' : '' }}">
+                <i class="bi bi-clock-history"></i>
+                <span class="nav-text">Riwayat Mutasi</span>
+            </a>
 
-            <li>
-                <a href="{{ route('stok.riwayat') }}" class="{{ request()->routeIs('stok.riwayat') ? 'active' : '' }}">
-                    <i class="bi bi-clock-history me-2"></i> Riwayat Mutasi
-                </a>
-            </li>
+            <div class="sidebar-category">LAPORAN</div>
+            <a href="{{ route('report.rekap') }}" class="nav-item-link {{ request()->routeIs('report.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span class="nav-text">Rekap BBPSIP</span>
+            </a>
+        </nav>
 
-            @role('admin_pusat')
-            <div class="nav-section">Pengaturan Sistem</div>
-            <li>
-                <a href="{{ route('benih.index') }}" class="{{ request()->routeIs('benih.*') ? 'active' : '' }}">
-                    <i class="bi bi-box-seam me-2"></i> Master Benih
-                </a>
-            </li>
-            <li>
-                <a href="{{ route('users.index') }}" class="{{ request()->routeIs('users.*') ? 'active' : '' }}">
-                    <i class="bi bi-people me-2"></i> Manajemen User
-                </a>
-            </li>
-            @endrole
-        </ul>
-    </nav>
-    @endauth
-
-    <!-- KONTEN UTAMA -->
-    <div id="content">
-        @auth
-        <!-- Topbar Header (Hanya muncul ketika sudah Login) -->
-        <div class="top-navbar d-flex justify-content-between align-items-center">
-            <div class="fw-semibold text-secondary">
-                <i class="bi bi-geo-alt me-1"></i> Sistem Informasi Pertanian & Stok Benih
-            </div>
-            <div class="d-flex align-items-center gap-3">
-                <span class="user-badge">
-                    <i class="bi bi-person-circle me-1"></i> {{ auth()->user()->name }} 
-                    <span class="badge bg-success ms-1">{{ strtoupper(auth()->user()->getRoleNames()->first() ?? 'USER') }}</span>
-                </span>
-                <form action="{{ route('logout') }}" method="POST" class="d-inline">
+        <!-- User Profile Footer -->
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="d-flex align-items-center gap-2 overflow-hidden">
+                    <div class="user-avatar">
+                        {{ $userInitial }}
+                    </div>
+                    <div class="user-info-text overflow-hidden">
+                        <div class="fw-bold text-truncate" style="font-size: 0.85rem;">{{ $userName }}</div>
+                        <small class="d-block text-truncate" style="font-size: 0.7rem;">{{ $userRole }}</small>
+                    </div>
+                </div>
+                <form action="{{ route('logout') }}" method="POST" class="d-inline m-0">
                     @csrf
-                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                        <i class="bi bi-box-arrow-right"></i> Logout
+                    <button type="submit" class="btn btn-sm text-white-50 border-0 p-1" title="Logout">
+                        <i class="bi bi-box-arrow-right fs-6"></i>
                     </button>
                 </form>
             </div>
         </div>
-        @endauth
+    </aside>
 
-        <!-- Flash Alert Messages -->
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show w-100" role="alert">
-                <i class="bi bi-check-circle me-1"></i> {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <!-- MAIN CONTENT WRAPPER -->
+    <div id="main-wrapper">
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div>
+                <h6 class="fw-bold mb-0">Sistem Informasi Pertanian & Stok Benih</h6>
+                <small class="text-muted" style="font-size: 0.75rem;">SIPANEN Nasional</small>
             </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show w-100" role="alert">
-                <i class="bi bi-exclamation-triangle me-1"></i> {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div class="topbar-badge">
+                <span>Halo, {{ $userName }}</span>
+                <span class="badge bg-success text-uppercase" style="background-color: var(--primary-green) !important;">
+                    {{ $userRole }}
+                </span>
             </div>
-        @endif
+        </header>
 
-        <!-- Dynamic Main Content -->
-        @auth
+        <!-- PAGE CONTENT CONTAINER -->
+        <main class="p-4 flex-grow-1">
             @yield('content')
-        @else
-            <div class="auth-container">
-                <div class="w-100" style="max-width: 420px;">
-                    @yield('content')
-                </div>
-            </div>
-        @endauth
-
-        <!-- Footer -->
-        <footer class="text-center w-100">
-            &copy; 2026 Kementerian Pertanian Republik Indonesia. All rights reserved.
-        </footer>
+        </main>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Sidebar Toggle Script -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const sidebar = document.getElementById("sidebar");
+            const toggleBtn = document.getElementById("sidebarToggle");
+
+            toggleBtn.addEventListener("click", function() {
+                sidebar.classList.toggle("collapsed");
+                if (sidebar.classList.contains("collapsed")) {
+                    localStorage.setItem("sipanen-sidebar-state", "collapsed");
+                } else {
+                    localStorage.setItem("sipanen-sidebar-state", "expanded");
+                }
+            });
+
+            if (localStorage.getItem("sipanen-sidebar-state") === "collapsed") {
+                sidebar.classList.add("collapsed");
+            }
+        });
+    </script>
 </body>
 </html>

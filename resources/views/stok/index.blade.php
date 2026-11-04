@@ -11,6 +11,20 @@
     </div>
 </div>
 
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
 <div class="card shadow">
     <div class="card-body p-0">
         <table class="table table-bordered table-hover mb-0">
@@ -22,27 +36,42 @@
                     <th>Komoditas</th>
                     <th>Varietas</th>
                     <th>Jumlah Stok Tersedia</th>
+                    @hasanyrole('admin_pusat|petugas_provinsi')
+                    <th class="text-center">Aksi</th>
+                    @endhasanyrole
                 </tr>
             </thead>
             <tbody>
                 @forelse($stokList as $item)
                 <tr>
-                    <td>{{ $item->provinsi->nama_provinsi }}</td>
-                    <td><code>{{ $item->benih->kode_benih }}</code></td>
-                    <td>{{ $item->benih->nama_benih }}</td>
-                    <td><span class="badge bg-{{ $item->benih->komoditas === 'padi' ? 'success' : 'warning' }}">{{ strtoupper($item->benih->komoditas) }}</span></td>
-                    <td>{{ $item->benih->varietas }}</td>
+                    <td>{{ $item->provinsi->nama_provinsi ?? '-' }}</td>
+                    <td><code>{{ $item->benih->kode_benih ?? '-' }}</code></td>
+                    <td>{{ $item->benih->nama_benih ?? '-' }}</td>
+                    <td><span class="badge bg-{{ ($item->benih->komoditas ?? 'padi') === 'padi' ? 'success' : 'warning' }}">{{ strtoupper($item->benih->komoditas ?? 'PADI') }}</span></td>
+                    <td>{{ $item->benih->varietas ?? '-' }}</td>
                     <td>
-                        @if($item->jumlah_stok_kg <= $item->benih->stok_minimum)
+                        @if($item->jumlah_stok_kg <= ($item->benih->stok_minimum ?? 0))
                             <span class="badge bg-danger fs-6">{{ number_format($item->jumlah_stok_kg, 2) }} Kg (MENIPIS)</span>
                         @else
                             <span class="badge bg-primary fs-6">{{ number_format($item->jumlah_stok_kg, 2) }} Kg</span>
                         @endif
                     </td>
+                    @hasanyrole('admin_pusat|petugas_provinsi')
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-1">
+                            <a href="{{ route('stok.edit', $item->id) }}" class="btn btn-primary btn-sm">Edit</a>
+                            <form action="{{ route('stok.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus data stok ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                            </form>
+                        </div>
+                    </td>
+                    @endhasanyrole
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" class="text-center py-3">Belum ada persediaan stok benih.</td>
+                    <td colspan="{{ auth()->user()->hasAnyRole(['admin_pusat', 'petugas_provinsi']) ? 7 : 6 }}" class="text-center py-3">Belum ada persediaan stok benih.</td>
                 </tr>
                 @endforelse
             </tbody>

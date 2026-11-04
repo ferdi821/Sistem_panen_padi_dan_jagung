@@ -29,16 +29,20 @@ class DashboardController extends Controller
             });
         }
 
-        // Total Produksi Padi 
-        $totalPadi = (clone $queryPanen)->sum('jumlah_panen_ton');
+        // 1. Total Produksi Padi (Menjumlahkan jumlah_panen_ton khusus komoditas PADI)
+        $totalPadiTon = (clone $queryPanen)
+            ->whereRaw('LOWER(komoditas) = ?', ['padi'])
+            ->sum('jumlah_panen_ton');
 
-        // Total Produksi Jagung 
-        $totalJagung = 0; 
+        // 2. Total Produksi Jagung (Menjumlahkan jumlah_panen_ton khusus komoditas JAGUNG)
+        $totalJagungTon = (clone $queryPanen)
+            ->whereRaw('LOWER(komoditas) = ?', ['jagung'])
+            ->sum('jumlah_panen_ton');
 
-        // Total Persediaan Benih di Gudang (Kg)
+        // 3. Total Persediaan Benih di Gudang (Kg) - Dipertahankan sesuai sistem yang berjalan
         $totalStokKg = (clone $queryStok)->sum('jumlah_stok_kg');
 
-        // Total Varietas Master Benih
+        // 4. Total Varietas Master Benih - Dipertahankan sesuai sistem yang berjalan
         $totalVarietas = 0;
         try {
             if (class_exists(\App\Models\Benih::class)) {
@@ -58,8 +62,8 @@ class DashboardController extends Controller
         $panenTerbaru = (clone $queryPanen)->with('provinsi')->latest()->take(5)->get();
 
         return view('dashboard.index', compact(
-            'totalPadi',
-            'totalJagung',
+            'totalPadiTon',
+            'totalJagungTon',
             'totalStokKg',
             'totalVarietas',
             'stokMasukKg',

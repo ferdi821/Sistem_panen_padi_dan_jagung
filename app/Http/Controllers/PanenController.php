@@ -12,20 +12,20 @@ class PanenController extends Controller
      * Menampilkan daftar catatan panen
      */
     public function index()
-{
-    $user = auth()->user();
+    {
+        $user = auth()->user();
 
-    if ($user->hasRole(['admin_pusat', 'pimpinan'])) {
-        $panenList = CatatanPanen::with(['provinsi', 'user'])->latest()->paginate(10);
-    } else {
-        $panenList = CatatanPanen::with(['provinsi', 'user'])
-                    ->where('provinsi_id', $user->provinsi_id)
-                    ->latest()
-                    ->paginate(10);
+        if ($user->hasRole(['admin_pusat', 'pimpinan'])) {
+            $panenList = CatatanPanen::with(['provinsi', 'user'])->latest()->paginate(10);
+        } else {
+            $panenList = CatatanPanen::with(['provinsi', 'user'])
+                        ->where('provinsi_id', $user->provinsi_id)
+                        ->latest()
+                        ->paginate(10);
+        }
+
+        return view('panen.index', compact('panenList'));
     }
-
-    return view('panen.index', compact('panenList'));
-}
 
     /**
      * Menampilkan form tambah data
@@ -72,5 +72,16 @@ class PanenController extends Controller
         CatatanPanen::create($validated);
 
         return redirect()->route('panen.index')->with('success', 'Data panen berhasil disimpan!');
+    }
+
+    /**
+     * Menghapus data panen dari database
+     */
+    public function destroy($id)
+    {
+        $panen = CatatanPanen::findOrFail($id);
+        $panen->delete();
+
+        return redirect()->route('panen.index')->with('success', 'Data panen berhasil dihapus!');
     }
 }
