@@ -9,6 +9,10 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StokBenihController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WilayahController;
+use App\Http\Controllers\DataApprovalController;
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\SystemSettingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn() => redirect()->route('login'));
@@ -50,10 +54,23 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/stok-benih/riwayat/{id}/edit', [StokBenihController::class, 'editRiwayat'])->name('stok.riwayat.edit');
         Route::put('/stok-benih/riwayat/{id}', [StokBenihController::class, 'updateRiwayat'])->name('stok.riwayat.update');
         Route::delete('/stok-benih/riwayat/{id}', [StokBenihController::class, 'destroyRiwayat'])->name('stok.riwayat.destroy');
+
+        // FITUR BARU KHUSUS ADMIN PUSAT
+        Route::resource('wilayah', WilayahController::class)->except(['create', 'edit', 'show']);
+        Route::post('/approval/{id}/approve', [DataApprovalController::class, 'approve'])->name('approval.approve');
+        Route::post('/approval/{id}/reject', [DataApprovalController::class, 'reject'])->name('approval.reject');
+        Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
+        Route::get('/settings', [SystemSettingController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [SystemSettingController::class, 'update'])->name('settings.update');
     });
 
-    // Fitur Input/Create Data & Manajemen (Admin Pusat & Petugas Provinsi)
+    // Fitur Approval Index & Transaksi (Admin Pusat & Petugas Provinsi)
     Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
+        Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
+        // Halaman Index Approval (Admin melihat semua, Petugas melihat miliknya sendiri)
+        Route::get('/approval', [DataApprovalController::class, 'index'])->name('approval.index');
+        Route::post('/approval', [DataApprovalController::class, 'store'])->name('approval.store');
+
         // Panen
         Route::get('/panen/create', [PanenController::class, 'create'])->name('panen.create');
         Route::post('/panen', [PanenController::class, 'store'])->name('panen.store');

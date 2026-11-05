@@ -3,12 +3,23 @@
     $userName = $currentUser->name ?? 'Administrator';
     $userInitial = strtoupper(substr($userName, 0, 1));
     
-    $userRole = 'ADMIN';
+    // Deteksi Role User
+    $userRole = 'GUEST';
     if ($currentUser) {
         if (method_exists($currentUser, 'getRoleNames') && $currentUser->getRoleNames()->isNotEmpty()) {
             $userRole = strtoupper($currentUser->getRoleNames()->first());
         } elseif (isset($currentUser->role) && !empty($currentUser->role)) {
             $userRole = strtoupper($currentUser->role);
+        }
+    }
+
+    // Deteksi Wilayah Provinsi (Aman untuk Admin Pusat & Pimpinan karena akan null)
+    $namaProvinsi = null;
+    if ($currentUser) {
+        if (isset($currentUser->provinsi->nama_provinsi)) {
+            $namaProvinsi = $currentUser->provinsi->nama_provinsi;
+        } elseif (isset($currentUser->nama_provinsi)) {
+            $namaProvinsi = $currentUser->nama_provinsi;
         }
     }
 @endphp
@@ -45,7 +56,7 @@
         /* Sidebar Styling (Hijau Gelap Khas SIPANEN) */
         #sidebar {
             width: var(--sidebar-width);
-            min-height: 100vh;
+            height: 100vh;
             background: #106742;
             border-right: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -69,6 +80,7 @@
             justify-content: space-between;
             border-bottom: 1px solid rgba(255, 255, 255, 0.15);
             height: 70px;
+            flex-shrink: 0;
         }
 
         .sidebar-brand {
@@ -97,22 +109,32 @@
             white-space: nowrap;
         }
 
-        .sidebar-brand-text small {
-            color: rgba(255, 255, 255, 0.7) !important;
-        }
-
         #sidebar.collapsed .sidebar-brand-text,
         #sidebar.collapsed .sidebar-category,
         #sidebar.collapsed .nav-text,
-        #sidebar.collapsed .user-info-text {
+        #sidebar.collapsed .user-info-text,
+        #sidebar.collapsed .scope-badge {
             display: none !important;
         }
 
-        /* Navigation Links */
+        /* Navigation Container Scrollable */
         .sidebar-nav {
             padding: 1rem 0.75rem;
-            flex-grow: 1;
+            flex: 1;
             overflow-y: auto;
+            min-height: 0;
+        }
+
+        /* Styling Scrollbar Tipis */
+        .sidebar-nav::-webkit-scrollbar {
+            width: 5px;
+        }
+        .sidebar-nav::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        .sidebar-nav::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
         }
 
         .sidebar-category {
@@ -160,10 +182,6 @@
             color: #ffffff;
         }
 
-        .nav-item-link:hover i {
-            color: #ffffff;
-        }
-
         .nav-item-link.active {
             background-color: #ffffff;
             color: #106742;
@@ -177,6 +195,7 @@
         .sidebar-footer {
             padding: 0.75rem;
             border-top: 1px solid rgba(255, 255, 255, 0.15);
+            flex-shrink: 0;
         }
 
         .user-card {
@@ -207,15 +226,17 @@
             font-size: 0.9rem;
         }
 
-        .user-info-text .fw-bold {
+        .scope-badge {
+            font-size: 0.65rem;
+            background: rgba(255, 255, 255, 0.2);
             color: #ffffff;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-top: 2px;
+            display: inline-block;
         }
 
-        .user-info-text small {
-            color: rgba(255, 255, 255, 0.7) !important;
-        }
-
-        /* Main Content Body Wrapper */
+        /* Content Body Wrapper */
         #main-wrapper {
             margin-left: var(--sidebar-width);
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -228,7 +249,6 @@
             margin-left: var(--sidebar-collapsed-width);
         }
 
-        /* Topbar Header */
         .topbar {
             background: #ffffff;
             border-bottom: 1px solid #e9ecef;
@@ -257,7 +277,7 @@
     <aside id="sidebar">
         <!-- Logo & Brand Header -->
         <div class="sidebar-header">
-            <a href="{{ route('dashboard') }}" class="sidebar-brand">
+            <a href="{{ Route::has('dashboard') ? route('dashboard') : '#' }}" class="sidebar-brand">
                 <img src="{{ asset('images/logo-removebg-preview.png') }}" 
                      alt="CTC Logo" 
                      class="sidebar-brand-img"
@@ -275,52 +295,87 @@
 
         <!-- Navigation Links -->
         <nav class="sidebar-nav">
-            <a href="{{ route('dashboard') }}" class="nav-item-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+            <a href="{{ Route::has('dashboard') ? route('dashboard') : '#' }}" class="nav-item-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i>
                 <span class="nav-text">Dashboard</span>
             </a>
 
             @hasrole('admin_pusat')
             <div class="sidebar-category">MASTER DATA</div>
-            <a href="{{ route('users.index') }}" class="nav-item-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+            <a href="{{ Route::has('users.index') ? route('users.index') : '#' }}" class="nav-item-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i>
                 <span class="nav-text">Manajemen User</span>
             </a>
-            <a href="{{ route('benih.index') }}" class="nav-item-link {{ request()->routeIs('benih.*') ? 'active' : '' }}">
+            <a href="{{ Route::has('benih.index') ? route('benih.index') : '#' }}" class="nav-item-link {{ request()->routeIs('benih.*') ? 'active' : '' }}">
                 <i class="bi bi-tags"></i>
-                <span class="nav-text">Varietas Benih</span>
+                <span class="nav-text">Varietas & Komoditas</span>
+            </a>
+            <a href="{{ Route::has('wilayah.index') ? route('wilayah.index') : '#' }}" class="nav-item-link {{ request()->routeIs('wilayah.*') ? 'active' : '' }}">
+                <i class="bi bi-geo-alt"></i>
+                <span class="nav-text">Wilayah & Gudang BPSIP</span>
             </a>
             @endhasrole
 
             <div class="sidebar-category">DATA & TRANSAKSI</div>
-            <a href="{{ route('panen.index') }}" class="nav-item-link {{ request()->routeIs('panen.*') ? 'active' : '' }}">
+            <a href="{{ Route::has('panen.index') ? route('panen.index') : '#' }}" class="nav-item-link {{ request()->routeIs('panen.*') ? 'active' : '' }}">
                 <i class="bi bi-journal-text"></i>
                 <span class="nav-text">Data Panen</span>
             </a>
-            <a href="{{ route('pengujian.index') }}" class="nav-item-link {{ request()->routeIs('pengujian.*') ? 'active' : '' }}">
+            <a href="{{ Route::has('pengujian.index') ? route('pengujian.index') : '#' }}" class="nav-item-link {{ request()->routeIs('pengujian.*') ? 'active' : '' }}">
                 <i class="bi bi-patch-check"></i>
                 <span class="nav-text">Uji Mutu Benih</span>
             </a>
-            <a href="{{ route('stok.index') }}" class="nav-item-link {{ request()->routeIs('stok.index') ? 'active' : '' }}">
+            <a href="{{ Route::has('stok.index') ? route('stok.index') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.index') ? 'active' : '' }}">
                 <i class="bi bi-boxes"></i>
                 <span class="nav-text">Stok Benih Wilayah</span>
             </a>
             @hasanyrole('admin_pusat|petugas_provinsi')
-            <a href="{{ route('stok.keluar.create') }}" class="nav-item-link {{ request()->routeIs('stok.keluar.*') ? 'active' : '' }}">
+            <a href="{{ Route::has('stok.keluar.create') ? route('stok.keluar.create') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.keluar.*') ? 'active' : '' }}">
                 <i class="bi bi-box-arrow-up-right"></i>
                 <span class="nav-text">Stok Keluar / Distribusi</span>
             </a>
             @endhasanyrole
-            <a href="{{ route('stok.riwayat') }}" class="nav-item-link {{ request()->routeIs('stok.riwayat') ? 'active' : '' }}">
+            <a href="{{ Route::has('stok.riwayat') ? route('stok.riwayat') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.riwayat') ? 'active' : '' }}">
                 <i class="bi bi-clock-history"></i>
                 <span class="nav-text">Riwayat Mutasi</span>
             </a>
+            @hasrole('admin_pusat')
+            <a href="{{ Route::has('approval.index') ? route('approval.index') : '#' }}" class="nav-item-link {{ request()->routeIs('approval.*') ? 'active' : '' }}">
+                <i class="bi bi-check2-square"></i>
+                <span class="nav-text">Persetujuan Koreksi</span>
+            </a>
+            @endhasrole
+
+            <!-- MENU TAMBAHAN KHUSUS PETUGAS PROVINSI -->
+            @hasrole('petugas_provinsi')
+            <div class="sidebar-category">KONTROL & AUDIT</div>
+            <a href="{{ Route::has('approval.index') ? route('approval.index') : '#' }}" class="nav-item-link {{ request()->routeIs('approval.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-diff"></i>
+                <span class="nav-text">Pengajuan Koreksi</span>
+            </a>
+            <a href="{{ Route::has('logs.index') ? route('logs.index') : '#' }}" class="nav-item-link {{ request()->routeIs('logs.*') ? 'active' : '' }}">
+                <i class="bi bi-shield-check"></i>
+                <span class="nav-text">Log Aktivitas Saya</span>
+            </a>
+            @endhasrole
 
             <div class="sidebar-category">LAPORAN</div>
-            <a href="{{ route('report.rekap') }}" class="nav-item-link {{ request()->routeIs('report.*') ? 'active' : '' }}">
+            <a href="{{ Route::has('report.rekap') ? route('report.rekap') : '#' }}" class="nav-item-link {{ request()->routeIs('report.*') ? 'active' : '' }}">
                 <i class="bi bi-file-earmark-bar-graph"></i>
                 <span class="nav-text">Rekap BBPSIP</span>
             </a>
+
+            @hasrole('admin_pusat')
+            <div class="sidebar-category">SISTEM</div>
+            <a href="{{ Route::has('logs.index') ? route('logs.index') : '#' }}" class="nav-item-link {{ request()->routeIs('logs.*') ? 'active' : '' }}">
+                <i class="bi bi-shield-check"></i>
+                <span class="nav-text">Log Aktivitas</span>
+            </a>
+            <a href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}" class="nav-item-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                <i class="bi bi-gear"></i>
+                <span class="nav-text">Pengaturan Sistem</span>
+            </a>
+            @endhasrole
         </nav>
 
         <!-- User Profile Footer -->
@@ -332,10 +387,13 @@
                     </div>
                     <div class="user-info-text overflow-hidden">
                         <div class="fw-bold text-truncate" style="font-size: 0.85rem;">{{ $userName }}</div>
-                        <small class="d-block text-truncate" style="font-size: 0.7rem;">{{ $userRole }}</small>
+                        <small class="d-block text-truncate text-white-50" style="font-size: 0.7rem;">{{ $userRole }}</small>
+                        @if($namaProvinsi)
+                            <span class="scope-badge"><i class="bi bi-geo-alt-fill me-1"></i>{{ $namaProvinsi }}</span>
+                        @endif
                     </div>
                 </div>
-                <form action="{{ route('logout') }}" method="POST" class="d-inline m-0">
+                <form action="{{ Route::has('logout') ? route('logout') : '#' }}" method="POST" class="d-inline m-0">
                     @csrf
                     <button type="submit" class="btn btn-sm text-white-50 border-0 p-1" title="Logout">
                         <i class="bi bi-box-arrow-right fs-6"></i>
@@ -347,7 +405,6 @@
 
     <!-- MAIN CONTENT WRAPPER -->
     <div id="main-wrapper">
-        <!-- TOPBAR -->
         <header class="topbar">
             <div>
                 <h6 class="fw-bold mb-0">Sistem Informasi Pertanian & Stok Benih</h6>
@@ -355,22 +412,26 @@
             </div>
             <div class="topbar-badge">
                 <span>Halo, {{ $userName }}</span>
+                @if($namaProvinsi)
+                    <span class="badge bg-secondary text-uppercase ms-1">
+                        {{ $namaProvinsi }}
+                    </span>
+                @endif
                 <span class="badge bg-success text-uppercase" style="background-color: var(--primary-green) !important;">
                     {{ $userRole }}
                 </span>
             </div>
         </header>
 
-        <!-- PAGE CONTENT CONTAINER -->
         <main class="p-4 flex-grow-1">
             @yield('content')
         </main>
     </div>
 
-    <!-- Bootstrap 5 JS Bundle -->
+    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Sidebar Toggle Script -->
+    <!-- Sidebar Collapsible Toggle Script -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const sidebar = document.getElementById("sidebar");

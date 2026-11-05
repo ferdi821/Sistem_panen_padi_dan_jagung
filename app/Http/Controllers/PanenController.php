@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CatatanPanen;
 use App\Models\Provinsi;
+use App\Http\Controllers\ActivityLogController;
 use Illuminate\Http\Request;
 
 class PanenController extends Controller
@@ -69,7 +70,15 @@ class PanenController extends Controller
         $validated['user_id'] = $user->id;
 
         // Simpan data
-        CatatanPanen::create($validated);
+        $panen = CatatanPanen::create($validated);
+
+        // ==========================================
+        // PENCATATAN LOG AKTIVITAS OTOMATIS
+        // ==========================================
+        ActivityLogController::record(
+            'CREATE',
+            'Menambahkan data panen baru komoditas ' . strtoupper($panen->komoditas) . ' (' . $panen->jumlah_panen_ton . ' Ton)'
+        );
 
         return redirect()->route('panen.index')->with('success', 'Data panen berhasil disimpan!');
     }
@@ -80,7 +89,19 @@ class PanenController extends Controller
     public function destroy($id)
     {
         $panen = CatatanPanen::findOrFail($id);
+        
+        $komoditas = $panen->komoditas;
+        $jumlah = $panen->jumlah_panen_ton;
+
         $panen->delete();
+
+        // ==========================================
+        // PENCATATAN LOG HAPUS OTOMATIS
+        // ==========================================
+        ActivityLogController::record(
+            'DELETE',
+            'Menghapus data panen komoditas ' . strtoupper($komoditas) . ' (' . $jumlah . ' Ton)'
+        );
 
         return redirect()->route('panen.index')->with('success', 'Data panen berhasil dihapus!');
     }

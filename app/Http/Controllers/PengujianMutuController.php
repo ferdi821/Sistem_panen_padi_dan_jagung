@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PengujianMutuBenih;
 use App\Models\CatatanPanen;
 use App\Models\Benih;
+use App\Models\SystemSetting;
 use Illuminate\Http\Request;
 
 class PengujianMutuController extends Controller
@@ -48,8 +49,27 @@ class PengujianMutuController extends Controller
             'kadar_air_persen' => 'required|numeric',
             'daya_tumbuh_persen' => 'required|numeric',
             'jumlah_lolos_kg' => 'required|numeric',
-            'status_kelayakan' => 'required|string',
         ]);
+
+        // 1. Ambil ambang batas dari Pengaturan Sistem (SystemSetting)
+        $maxKadarAir = (float) (SystemSetting::where('key', 'min_kadar_air')->value('value') ?? 13.0);
+        $minDayaTumbuh = (float) (SystemSetting::where('key', 'min_daya_tumbuh')->value('value') ?? 80.0);
+
+        $kadarAir = (float) $request->kadar_air_persen;
+        $dayaTumbuh = (float) $request->daya_tumbuh_persen;
+
+        // 2. Evaluasi Logika Kelayakan Berdasarkan Setting
+        // Kadar air HARUS <= standar maksimal DAN daya tumbuh HARUS >= standar minimal
+        if ($kadarAir <= $maxKadarAir && $dayaTumbuh >= $minDayaTumbuh) {
+            $statusVal = 'layak';
+        } else {
+            $statusVal = 'tidak_layak';
+        }
+
+        // Jika user memilih 'proses' secara eksplisit di form, pertahankan 'proses'
+        if ($request->has('status_kelayakan') && strtolower(trim($request->status_kelayakan)) === 'proses') {
+            $statusVal = 'proses';
+        }
 
         PengujianMutuBenih::create([
             'catatan_panen_id' => $request->catatan_panen_id,
@@ -59,8 +79,8 @@ class PengujianMutuController extends Controller
             'volume_sampel_kg' => $request->volume_sampel_kg ?? 0,
             'kadar_air_persen' => $request->kadar_air_persen,
             'daya_tumbuh_persen' => $request->daya_tumbuh_persen,
-            'jumlah_lolos_kg' => $request->jumlah_lolos_kg, // Sesuai kolom database: jumlah_lolos_kg
-            'status_kelayakan' => $request->status_kelayakan,
+            'jumlah_lolos_kg' => $request->jumlah_lolos_kg,
+            'status_kelayakan' => $statusVal,
             'catatan_pengujian' => $request->catatan_pengujian,
         ]);
 
@@ -89,19 +109,26 @@ class PengujianMutuController extends Controller
             'kadar_air_persen' => 'required|numeric',
             'daya_tumbuh_persen' => 'required|numeric',
             'jumlah_lolos_kg' => 'required|numeric',
-            'status' => 'required|string',
         ]);
 
         $pengujianMutu = PengujianMutuBenih::findOrFail($id);
 
-        $statusInput = strtoupper(trim($request->status));
-        
-        // Mapping status yang lebih aman dan fleksibel
-        if (str_contains($statusInput, 'LAYAK') && !str_contains($statusInput, 'TIDAK')) {
+        // 1. Ambil ambang batas dari Pengaturan Sistem (SystemSetting)
+        $maxKadarAir = (float) (SystemSetting::where('key', 'min_kadar_air')->value('value') ?? 13.0);
+        $minDayaTumbuh = (float) (SystemSetting::where('key', 'min_daya_tumbuh')->value('value') ?? 80.0);
+
+        $kadarAir = (float) $request->kadar_air_persen;
+        $dayaTumbuh = (float) $request->daya_tumbuh_persen;
+
+        // 2. Evaluasi Logika Kelayakan Berdasarkan Setting
+        if ($kadarAir <= $maxKadarAir && $dayaTumbuh >= $minDayaTumbuh) {
             $statusVal = 'layak';
-        } elseif (str_contains($statusInput, 'TIDAK')) {
-            $statusVal = 'tidak_layak';
         } else {
+            $statusVal = 'tidak_layak';
+        }
+
+        // Jika form mengirim status khusus seperti 'proses'
+        if ($request->has('status') && strtolower(trim($request->status)) === 'proses') {
             $statusVal = 'proses';
         }
 
