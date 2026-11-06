@@ -321,10 +321,6 @@
                 <i class="bi bi-journal-text"></i>
                 <span class="nav-text">Data Panen</span>
             </a>
-            <a href="{{ Route::has('pengujian.index') ? route('pengujian.index') : '#' }}" class="nav-item-link {{ request()->routeIs('pengujian.*') ? 'active' : '' }}">
-                <i class="bi bi-patch-check"></i>
-                <span class="nav-text">Uji Mutu Benih</span>
-            </a>
             <a href="{{ Route::has('stok.index') ? route('stok.index') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.index') ? 'active' : '' }}">
                 <i class="bi bi-boxes"></i>
                 <span class="nav-text">Stok Benih Wilayah</span>
@@ -339,31 +335,23 @@
                 <i class="bi bi-clock-history"></i>
                 <span class="nav-text">Riwayat Mutasi</span>
             </a>
-            @hasrole('admin_pusat')
-            <a href="{{ Route::has('approval.index') ? route('approval.index') : '#' }}" class="nav-item-link {{ request()->routeIs('approval.*') ? 'active' : '' }}">
-                <i class="bi bi-check2-square"></i>
-                <span class="nav-text">Persetujuan Koreksi</span>
-            </a>
-            @endhasrole
 
-            <!-- MENU TAMBAHAN KHUSUS PETUGAS PROVINSI -->
-            @hasrole('petugas_provinsi')
-            <div class="sidebar-category">KONTROL & AUDIT</div>
-            <a href="{{ Route::has('approval.index') ? route('approval.index') : '#' }}" class="nav-item-link {{ request()->routeIs('approval.*') ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-diff"></i>
-                <span class="nav-text">Pengajuan Koreksi</span>
-            </a>
-            <a href="{{ Route::has('logs.index') ? route('logs.index') : '#' }}" class="nav-item-link {{ request()->routeIs('logs.*') ? 'active' : '' }}">
-                <i class="bi bi-shield-check"></i>
-                <span class="nav-text">Log Aktivitas Saya</span>
-            </a>
-            @endhasrole
-
+            <!-- BAGIAN LAPORAN TERPISAH SESUAI ROLE -->
             <div class="sidebar-category">LAPORAN</div>
-            <a href="{{ Route::has('report.rekap') ? route('report.rekap') : '#' }}" class="nav-item-link {{ request()->routeIs('report.*') ? 'active' : '' }}">
+
+            @hasrole('admin_pusat')
+            <a href="{{ Route::has('admin.report.rekap') ? route('admin.report.rekap') : '#' }}" class="nav-item-link {{ request()->routeIs('admin.report.*') ? 'active' : '' }}">
                 <i class="bi bi-file-earmark-bar-graph"></i>
-                <span class="nav-text">Rekap BBPSIP</span>
+                <span class="nav-text">Rekap BBPSIP Nasional</span>
             </a>
+            @endhasrole
+
+            @hasrole('petugas_provinsi')
+            <a href="{{ Route::has('petugas.report.rekap') ? route('petugas.report.rekap') : '#' }}" class="nav-item-link {{ request()->routeIs('petugas.report.*') ? 'active' : '' }}">
+                <i class="bi bi-file-earmark-bar-graph"></i>
+                <span class="nav-text">Rekap Stok Wilayah</span>
+            </a>
+            @endhasrole
 
             @hasrole('admin_pusat')
             <div class="sidebar-category">SISTEM</div>

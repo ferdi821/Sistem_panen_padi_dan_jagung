@@ -21,9 +21,13 @@ class CatatanPanen extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    // Tambahan relasi ke pengujian mutu benih
     public function pengujianMutus()
     {
         return $this->hasMany(PengujianMutuBenih::class, 'catatan_panen_id');
+    }
+
+    public function benih()
+    {
+        return $this->belongsTo(Benih::class, 'benih_id');
     }
 }

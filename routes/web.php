@@ -1,19 +1,17 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BenihController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PanenController;
-use App\Http\Controllers\PengujianMutuController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\RoleController;
 use App\Http\Controllers\StokBenihController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\BenihController;
 use App\Http\Controllers\WilayahController;
-use App\Http\Controllers\DataApprovalController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\SystemSettingController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\Reports\AdminRekapReportController;
+use App\Http\Controllers\Petugas\Reports\PetugasRekapReportController;
 
 Route::get('/', fn() => redirect()->route('login'));
 
@@ -21,73 +19,49 @@ Route::get('/', fn() => redirect()->route('login'));
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
-
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Route Authenticated (Bisa diakses SEMUA role termasuk Pimpinan)
+// Route Authenticated
 Route::middleware(['auth'])->group(function () {
 
-    // Dashboard & PDF (Read-Only)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/rekap-bbpsip', [ReportController::class, 'rekapBbpsip'])->name('report.rekap');
-    Route::get('/report/rekap/pdf', [ReportController::class, 'rekapPdf'])->name('report.rekap.pdf');
-    Route::get('/report/panen/pdf', [ReportController::class, 'panenPdf'])->name('report.panen.pdf');
-    Route::get('/report/stok/pdf', [ReportController::class, 'stokPdf'])->name('report.stok.pdf');
-
-    // Read-Only Index & Riwayat
     Route::get('/panen', [PanenController::class, 'index'])->name('panen.index');
-    Route::get('/pengujian-mutu', [PengujianMutuController::class, 'index'])->name('pengujian.index');
     Route::get('/stok-benih', [StokBenihController::class, 'index'])->name('stok.index');
     Route::get('/stok-benih/riwayat', [StokBenihController::class, 'riwayatMutasi'])->name('stok.riwayat');
 
-    // Admin Pusat Management
+    // Admin Pusat Management & Laporan Rekap Nasional
     Route::middleware(['role:admin_pusat'])->group(function () {
         Route::resource('users', UserController::class);
-        Route::resource('roles', RoleController::class)->except(['show']);
         Route::resource('benih', BenihController::class)->except(['show']);
-
-        // Kelola & Batal Transaksi Mutasi (Khusus Admin Pusat)
-        Route::get('/stok-benih/riwayat/{id}/edit', [StokBenihController::class, 'editRiwayat'])->name('stok.riwayat.edit');
-        Route::put('/stok-benih/riwayat/{id}', [StokBenihController::class, 'updateRiwayat'])->name('stok.riwayat.update');
-        Route::delete('/stok-benih/riwayat/{id}', [StokBenihController::class, 'destroyRiwayat'])->name('stok.riwayat.destroy');
-
-        // FITUR BARU KHUSUS ADMIN PUSAT
         Route::resource('wilayah', WilayahController::class)->except(['create', 'edit', 'show']);
-        Route::post('/approval/{id}/approve', [DataApprovalController::class, 'approve'])->name('approval.approve');
-        Route::post('/approval/{id}/reject', [DataApprovalController::class, 'reject'])->name('approval.reject');
         Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
         Route::get('/settings', [SystemSettingController::class, 'index'])->name('settings.index');
-        Route::post('/settings', [SystemSettingController::class, 'update'])->name('settings.update');
+
+        // LAPORAN ADMIN PUSAT
+        Route::get('/admin/rekap-bbpsip', [AdminRekapReportController::class, 'index'])->name('admin.report.rekap');
+        Route::get('/admin/rekap-bbpsip/pdf', [AdminRekapReportController::class, 'exportPdf'])->name('admin.report.rekap.pdf');
     });
 
-    // Fitur Approval Index & Transaksi (Admin Pusat & Petugas Provinsi)
-    Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
-        Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
-        // Halaman Index Approval (Admin melihat semua, Petugas melihat miliknya sendiri)
-        Route::get('/approval', [DataApprovalController::class, 'index'])->name('approval.index');
-        Route::post('/approval', [DataApprovalController::class, 'store'])->name('approval.store');
+    // Petugas Provinsi Laporan Rekap Wilayah
+    Route::middleware(['role:petugas_provinsi'])->group(function () {
+        Route::get('/petugas/rekap-bbpsip', [PetugasRekapReportController::class, 'index'])->name('petugas.report.rekap');
+        Route::get('/petugas/rekap-bbpsip/pdf', [PetugasRekapReportController::class, 'exportPdf'])->name('petugas.report.rekap.pdf');
+    });
 
-        // Panen
+    // Transaksi (Admin & Petugas)
+    Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
         Route::get('/panen/create', [PanenController::class, 'create'])->name('panen.create');
         Route::post('/panen', [PanenController::class, 'store'])->name('panen.store');
         Route::delete('/panen/{panen}', [PanenController::class, 'destroy'])->name('panen.destroy');
-
-        // Uji Mutu
-        Route::get('/pengujian-mutu/create', [PengujianMutuController::class, 'create'])->name('pengujian.create');
-        Route::post('/pengujian-mutu', [PengujianMutuController::class, 'store'])->name('pengujian.store');
-        Route::get('/pengujian-mutu/{id}/edit', [PengujianMutuController::class, 'edit'])->name('pengujian.edit');
-        Route::put('/pengujian-mutu/{id}', [PengujianMutuController::class, 'update'])->name('pengujian.update');
-        Route::delete('/pengujian-mutu/{id}', [PengujianMutuController::class, 'destroy'])->name('pengujian.destroy');
-
-        // Transaksi Stok Keluar
+        
         Route::get('/stok-benih/keluar', [StokBenihController::class, 'createKeluar'])->name('stok.keluar.create');
         Route::post('/stok-benih/keluar', [StokBenihController::class, 'storeKeluar'])->name('stok.keluar.store');
 
-        // Edit & Hapus Stok Benih Wilayah
+        // Tambahkan rute Edit, Update, & Destroy Stok Benih di sini
         Route::get('/stok-benih/{id}/edit', [StokBenihController::class, 'edit'])->name('stok.edit');
         Route::put('/stok-benih/{id}', [StokBenihController::class, 'update'])->name('stok.update');
         Route::delete('/stok-benih/{id}', [StokBenihController::class, 'destroy'])->name('stok.destroy');
