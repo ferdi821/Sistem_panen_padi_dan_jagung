@@ -23,18 +23,7 @@ class PetugasRekapReportController extends Controller
 
         $rekapData = $this->getRekapWilayahData($user->provinsi_id, $namaProvinsi, $start, $end);
         
-        $detailVarietas = StokBenih::with(['benih'])
-            ->where('provinsi_id', $user->provinsi_id)
-            ->get();
-
-        return view('reports.petugas.rekap_wilayah', compact(
-            'rekapData', 
-            'detailVarietas', 
-            'namaProvinsi', 
-            'periode', 
-            'start', 
-            'end'
-        ));
+        return view('reports.petugas.rekap_wilayah', compact('rekapData', 'namaProvinsi', 'periode', 'start', 'end'));
     }
 
     public function exportPdf(Request $request)
@@ -54,99 +43,89 @@ class PetugasRekapReportController extends Controller
 
     private function getRekapWilayahData($provinsiId, $namaProvinsi, $start, $end)
     {
-        // Mengambil daftar wilayah/kabupaten berdasarkan nama provinsi
         $wilayahs = Wilayah::where('nama_provinsi', $namaProvinsi)->orderBy('nama_kabupaten', 'asc')->get();
+        if ($wilayahs->isEmpty()) {
+            $wilayahs = collect([(object)['nama_kabupaten' => $namaProvinsi]]);
+        }
+
         $rekapData = [];
 
         foreach ($wilayahs as $wil) {
-            $targetFsTotal = 0.00; 
-            $targetSsTotal = 0.00; 
-            $totalTarget = $targetFsTotal + $targetSsTotal;
-
-            // Ambil stok benih berdasarkan provinsi_id milik petugas
             $stokItems = StokBenih::where('provinsi_id', $provinsiId)->with('benih')->get();
-            $varietasUnik = $stokItems->pluck('benih.varietas')->filter()->unique()->values();
 
-            if ($varietasUnik->isEmpty()) {
+            if ($stokItems->isEmpty()) {
                 $subRows = [[
-                    'target_fs_vol' => $targetFsTotal,
-                    'target_fs_var' => '-',
-                    'target_ss_vol' => $targetSsTotal,
-                    'target_ss_var' => '-',
-                    'distribusi_fs_vol' => 0.00,
-                    'distribusi_fs_var' => '-',
-                    'distribusi_ss_vol' => 0.00,
-                    'distribusi_ss_var' => '-',
-                    'tersedia_fs_vol' => 0.00,
-                    'tersedia_fs_var' => '-',
-                    'tersedia_ss_vol' => 0.00,
-                    'tersedia_ss_var' => '-',
-                    'prosesing_fs_vol' => 0.00,
-                    'prosesing_fs_var' => '-',
-                    'prosesing_ss_vol' => 0.00,
-                    'prosesing_ss_var' => '-',
-                    'persiapan_fs_vol' => 0.00,
-                    'persiapan_fs_var' => '-',
-                    'persiapan_fs_tgl' => '-',
-                    'persiapan_ss_vol' => 0.00,
-                    'persiapan_ss_var' => '-',
-                    'persiapan_ss_tgl' => '-',
+                    'target_fs_vol' => 0.00, 'target_fs_var' => '-', 'target_ss_vol' => 0.00, 'target_ss_var' => '-',
+                    'distribusi_fs_vol' => 0.00, 'distribusi_fs_var' => '-', 'distribusi_ss_vol' => 0.00, 'distribusi_ss_var' => '-',
+                    'tersedia_fs_vol' => 0.00, 'tersedia_fs_var' => '-', 'tersedia_ss_vol' => 0.00, 'tersedia_ss_var' => '-',
+                    'prosesing_fs_vol' => 0.00, 'prosesing_fs_var' => '-', 'prosesing_ss_vol' => 0.00, 'prosesing_ss_var' => '-',
+                    'persiapan_fs_vol' => 0.00, 'persiapan_fs_var' => '-', 'persiapan_fs_tgl' => '-',
+                    'persiapan_ss_vol' => 0.00, 'persiapan_ss_var' => '-', 'persiapan_ss_tgl' => '-',
                 ]];
             } else {
                 $subRows = [];
-                foreach ($varietasUnik as $idxVar => $varName) {
-                    $volTersediaFs = (float)($stokItems->filter(fn($s) => ($s->benih->varietas ?? '') === $varName && ($s->benih->kelas_benih ?? '') === 'FS')->sum('jumlah_stok_kg') / 1000);
-                    $volTersediaSs = (float)($stokItems->filter(fn($s) => ($s->benih->varietas ?? '') === $varName && ($s->benih->kelas_benih ?? '') === 'SS')->sum('jumlah_stok_kg') / 1000);
+                foreach ($stokItems as $s) {
+                    $varName = $s->benih->varietas ?? '-';
+                    $kelas = strtoupper($s->benih->kelas_benih ?? 'BR');
+                    $isFS = ($kelas === 'BD' || $kelas === 'FS');
 
-                    $volDistFs = 0.00;
-                    $volDistSs = 0.00;
-                    $persiapanFsVol = 0.00;
-                    $persiapanSsVol = 0.00;
+                    // Ambil transaksi keluar real-time berdasarkan stok_benih_id & periode
+                    $volDist = (float) TransaksiStokBenih::where('stok_benih_id', $s->id)
+                                ->where('jenis_transaksi', 'keluar')
+                                ->whereBetween('tanggal_transaksi', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+                                ->sum('jumlah_kg');
 
-                    $rowTargetFs = $idxVar === 0 ? $targetFsTotal : 0.00;
-                    $rowTargetSs = $idxVar === 0 ? $targetSsTotal : 0.00;
+                    // Ambil data catatan panen real-time berdasarkan periode
+                    $panen = CatatanPanen::where('provinsi_id', $provinsiId)
+                                ->whereBetween('tanggal_panen', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+                                ->first();
+
+                    $volTersedia = (float) $s->jumlah_stok_kg;
+                    $volPanen = $panen ? (float) $panen->jumlah_panen_ton : 0.00;
+                    $tglPanen = $panen ? Carbon::parse($panen->tanggal_panen)->format('d/m/Y') : '-';
 
                     $subRows[] = [
-                        'target_fs_vol' => $rowTargetFs,
-                        'target_fs_var' => $idxVar === 0 && $rowTargetFs > 0 ? $varName : ($volTersediaFs > 0 ? $varName : '-'),
-                        'target_ss_vol' => $rowTargetSs,
-                        'target_ss_var' => $idxVar === 0 && $rowTargetSs > 0 ? $varName : ($volTersediaSs > 0 ? $varName : '-'),
+                        'target_fs_vol'     => $isFS ? ($volTersedia + $volDist) : 0.00,
+                        'target_fs_var'     => $isFS ? $varName : '-',
+                        'target_ss_vol'     => !$isFS ? ($volTersedia + $volDist) : 0.00,
+                        'target_ss_var'     => !$isFS ? $varName : '-',
                         
-                        'distribusi_fs_vol' => $volDistFs,
-                        'distribusi_fs_var' => $volDistFs > 0 ? $varName : '-',
-                        'distribusi_ss_vol' => $volDistSs,
-                        'distribusi_ss_var' => $volDistSs > 0 ? $varName : '-',
+                        'distribusi_fs_vol' => $isFS ? $volDist : 0.00,
+                        'distribusi_fs_var' => $isFS && $volDist > 0 ? $varName : '-',
+                        'distribusi_ss_vol' => !$isFS ? $volDist : 0.00,
+                        'distribusi_ss_var' => !$isFS && $volDist > 0 ? $varName : '-',
 
-                        'tersedia_fs_vol' => $volTersediaFs,
-                        'tersedia_fs_var' => $volTersediaFs > 0 ? $varName : '-',
-                        'tersedia_ss_vol' => $volTersediaSs,
-                        'tersedia_ss_var' => $volTersediaSs > 0 ? $varName : '-',
+                        'tersedia_fs_vol'   => $isFS ? $volTersedia : 0.00,
+                        'tersedia_fs_var'   => $isFS ? $varName : '-',
+                        'tersedia_ss_vol'   => !$isFS ? $volTersedia : 0.00,
+                        'tersedia_ss_var'   => !$isFS ? $varName : '-',
 
-                        'prosesing_fs_vol' => 0.00,
-                        'prosesing_fs_var' => '-',
-                        'prosesing_ss_vol' => 0.00,
-                        'prosesing_ss_var' => '-',
+                        'prosesing_fs_vol'  => 0.00,
+                        'prosesing_fs_var'  => '-',
+                        'prosesing_ss_vol'  => 0.00,
+                        'prosesing_ss_var'  => '-',
 
-                        'persiapan_fs_vol' => $persiapanFsVol,
-                        'persiapan_fs_var' => '-',
-                        'persiapan_fs_tgl' => '-',
-                        'persiapan_ss_vol' => $persiapanSsVol,
-                        'persiapan_ss_var' => '-',
-                        'persiapan_ss_tgl' => '-',
+                        'persiapan_fs_vol'  => $isFS ? $volPanen : 0.00,
+                        'persiapan_fs_var'  => $isFS ? $varName : '-',
+                        'persiapan_fs_tgl'  => $isFS ? $tglPanen : '-',
+                        
+                        'persiapan_ss_vol'  => !$isFS ? $volPanen : 0.00,
+                        'persiapan_ss_var'  => !$isFS ? $varName : '-',
+                        'persiapan_ss_tgl'  => !$isFS ? $tglPanen : '-',
                     ];
                 }
             }
 
             $totalDist = array_sum(array_column($subRows, 'distribusi_fs_vol')) + array_sum(array_column($subRows, 'distribusi_ss_vol'));
             $totalTersedia = array_sum(array_column($subRows, 'tersedia_fs_vol')) + array_sum(array_column($subRows, 'tersedia_ss_vol'));
-            $kontrol = $totalTarget - ($totalDist + $totalTersedia);
+            $totalTarget = $totalDist + $totalTersedia;
 
             $rekapData[] = [
-                'satker' => $wil->nama_kabupaten,
-                'total' => $totalTarget,
-                'kontrol' => $kontrol,
+                'satker'  => $wil->nama_kabupaten,
+                'total'   => $totalTarget,
+                'kontrol' => 0.00,
                 'rowspan' => count($subRows),
-                'rows' => $subRows,
+                'rows'    => $subRows,
             ];
         }
 

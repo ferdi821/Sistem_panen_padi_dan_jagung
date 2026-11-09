@@ -1,169 +1,204 @@
 @extends('layouts.app')
 
-@section('title', 'Dashboard Ringkasan Panen & Stok')
+@section('title', 'Dashboard Ringkasan Panen & Stok Nasional')
 
 @section('content')
-<!-- BANNER UTAMA HIJAU -->
-<div class="card border-0 shadow-sm text-white mb-4" style="background: linear-gradient(135deg, #106742 0%, #0c5234 100%); border-radius: 16px;">
-    <div class="card-body p-4 p-md-5">
-        <small class="text-white-50 fw-bold text-uppercase tracking-wide" style="font-size: 0.75rem;">SIPANEN KEMENTAN</small>
-        <h2 class="fw-bold mt-1 mb-2">Ringkasan Panen & Stok</h2>
-        <p class="mb-0 text-white-50" style="max-width: 650px;">
-            Ikhtisar real-time hasil produksi panen padi, jagung, serta akumulasi mutasi stok benih nasional.
-        </p>
+<style>
+    .chart-box-container {
+        position: relative;
+        width: 100%;
+        height: 280px;
+    }
+    @media (min-width: 992px) {
+        .chart-box-container {
+            height: 320px;
+        }
+    }
+</style>
+
+<div class="container-fluid px-0 px-md-2">
+    <!-- BANNER UTAMA NASIONAL -->
+    <div class="card border-0 shadow-sm text-white mb-4" style="background: linear-gradient(135deg, #106742 0%, #0c5234 100%); border-radius: 16px;">
+        <div class="card-body p-3 p-sm-4 p-md-5">
+            <small class="text-white-50 fw-bold text-uppercase tracking-wide" style="font-size: 0.7rem;">SIPANEN KEMENTAN</small>
+            <h2 class="fw-bold mt-1 mb-2 fs-3 fs-md-2">Ringkasan Panen & Stok Nasional</h2>
+            <p class="mb-0 text-white-50 small" style="max-width: 650px;">
+                Ikhtisar real-time hasil produksi panen padi, jagung, serta akumulasi mutasi stok benih nasional.
+            </p>
+        </div>
     </div>
-</div>
 
-<!-- SUB-HEADER IKHTISAR -->
-<div class="mb-3">
-    <h5 class="fw-bold mb-1 text-dark">Ikhtisar Produksi & Stok</h5>
-    <p class="text-muted small mb-0">Ringkasan berdasarkan akumulasi data komoditas dan persediaan yang tersedia.</p>
-</div>
+    <!-- 4 KARTU INDIKATOR -->
+    <div class="row g-2 g-md-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm bg-success text-white h-100" style="border-radius: 14px;">
+                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white-50 fw-semibold text-uppercase" style="font-size: 0.7rem;">Total Produksi Padi</span>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-flower1 fs-5 text-white"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold mb-0 fs-3">
+                        {{ number_format($totalPadiTon ?? 0, 2) }} 
+                        <span class="fs-6 fw-normal text-white-50">Ton</span>
+                    </h3>
+                </div>
+            </div>
+        </div>
 
-<!-- BARIS 1: 4 KARTU INDIKATOR UTAMA BERWARNA -->
-<div class="row g-3 mb-4">
-    <!-- Card 1: Total Produksi Padi (Hijau) -->
-    <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm bg-success text-white h-100" style="border-radius: 14px;">
-            <div class="card-body p-3 d-flex flex-column justify-content-between">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-white-50 fw-semibold small text-uppercase">Total Produksi Padi</span>
-                    <div class="bg-white bg-opacity-25 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                        <i class="bi bi-flower1 fs-4 text-white"></i>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm bg-warning text-dark h-100" style="border-radius: 14px;">
+                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-dark-50 fw-semibold text-uppercase" style="font-size: 0.7rem;">Total Produksi Jagung</span>
+                        <div class="bg-dark bg-opacity-10 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-sun fs-5 text-dark"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold mb-0 fs-3">
+                        {{ number_format($totalJagungTon ?? 0, 2) }} 
+                        <span class="fs-6 fw-normal text-dark-50">Ton</span>
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm bg-primary text-white h-100" style="border-radius: 14px;">
+                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white-50 fw-semibold text-uppercase" style="font-size: 0.7rem;">Total Persediaan Benih</span>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-boxes fs-5 text-white"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold mb-0 fs-3">
+                        {{ number_format($totalStokKg ?? 0, 2) }} 
+                        <span class="fs-6 fw-normal text-white-50">Kg</span>
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm bg-info text-white h-100" style="border-radius: 14px;">
+                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white-50 fw-semibold text-uppercase" style="font-size: 0.7rem;">Varietas Benih</span>
+                        <div class="bg-white bg-opacity-25 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-tags fs-5 text-white"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold mb-0 fs-3">
+                        {{ $totalVarietas ?? 0 }} 
+                        <span class="fs-6 fw-normal text-white-50">Varietas</span>
+                    </h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BARIS GRAFIK & TABEL ADMIN -->
+    <div class="row g-3">
+        <!-- GRAFIK TREN NASIONAL -->
+        <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 14px;">
+                <div class="card-header bg-white py-2 py-md-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-dark small">
+                        <i class="bi bi-bar-chart-line-fill me-2 text-success"></i>Tren Produksi Nasional
+                    </h6>
+                    <span class="badge bg-light text-muted border">Tahun {{ date('Y') }}</span>
+                </div>
+                <div class="card-body p-2 p-md-3 d-flex align-items-center">
+                    <div class="chart-box-container">
+                        <canvas id="adminTrenChart"></canvas>
                     </div>
                 </div>
-                <h2 class="fw-bold mb-0 display-6">
-                    {{ number_format($totalPadiTon ?? $totalPadi ?? 0, 2) }} 
-                    <span class="fs-6 fw-normal text-white-50">Ton</span>
-                </h2>
             </div>
         </div>
-    </div>
 
-    <!-- Card 2: Total Produksi Jagung (Kuning/Orange) -->
-    <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm bg-warning text-dark h-100" style="border-radius: 14px;">
-            <div class="card-body p-3 d-flex flex-column justify-content-between">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-dark-50 fw-semibold small text-uppercase">Total Produksi Jagung</span>
-                    <div class="bg-dark bg-opacity-10 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                        <i class="bi bi-sun fs-4 text-dark"></i>
+        <!-- TABEL PANEN TERBARU -->
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 14px; overflow: hidden;">
+                <div class="card-header bg-white py-2 py-md-3 border-bottom d-flex align-items-center justify-content-between gap-2 overflow-hidden" style="min-width: 0;">
+                    <div class="d-flex align-items-center overflow-hidden me-auto" style="min-width: 0;">
+                        <i class="bi bi-journal-text me-1 text-success flex-shrink-0"></i>
+                        <h6 class="fw-bold mb-0 text-dark text-truncate" style="font-size: clamp(0.72rem, 2.5vw, 0.88rem); white-space: nowrap;">
+                            Aktivitas Panen Terbaru
+                        </h6>
+                    </div>
+                    <a href="{{ route('panen.index') }}" class="btn btn-sm btn-outline-success rounded-pill text-nowrap flex-shrink-0" style="font-size: 0.65rem; padding: 2px 8px; line-height: 1.2;">
+                        Lihat Semua
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive" style="-webkit-overflow-scrolling: touch;">
+                        <table class="table table-hover align-middle mb-0" style="font-size: 0.78rem;">
+                            <thead class="table-light text-nowrap">
+                                <tr>
+                                    <th class="ps-3 py-2">Tanggal</th>
+                                    <th class="py-2">Provinsi</th>
+                                    <th class="py-2">Komoditas</th>
+                                    <th class="text-end pe-3 py-2">Hasil (Ton)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($panenTerbaru ?? [] as $panen)
+                                <tr>
+                                    <td class="ps-3 fw-semibold text-nowrap py-2">
+                                        {{ $panen->tanggal_panen_realisasi ?? $panen->tanggal_panen ?? $panen->tanggal_estimasi_panen }}
+                                    </td>
+                                    <td class="text-nowrap py-2">{{ $panen->provinsi->nama_provinsi ?? '-' }}</td>
+                                    <td class="text-nowrap py-2">
+                                        <span class="badge bg-{{ strtolower($panen->komoditas) === 'padi' ? 'success' : 'warning text-dark' }} px-2 py-1" style="font-size: 0.65rem;">
+                                            {{ strtoupper($panen->komoditas) }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-3 fw-bold text-nowrap py-2">
+                                        {{ number_format($panen->jumlah_panen_ton, 2) }} Ton
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">Belum ada aktivitas data panen terbaru.</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <h2 class="fw-bold mb-0 display-6">
-                    {{ number_format($totalJagungTon ?? $totalJagung ?? 0, 2) }} 
-                    <span class="fs-6 fw-normal text-dark-50">Ton</span>
-                </h2>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 3: Total Persediaan Benih (Biru) -->
-    <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm bg-primary text-white h-100" style="border-radius: 14px;">
-            <div class="card-body p-3 d-flex flex-column justify-content-between">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-white-50 fw-semibold small text-uppercase">Total Persediaan Benih</span>
-                    <div class="bg-white bg-opacity-25 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                        <i class="bi bi-boxes fs-4 text-white"></i>
-                    </div>
-                </div>
-                <h2 class="fw-bold mb-0 display-6">
-                    {{ number_format($totalStokKg ?? 0, 2) }} 
-                    <span class="fs-6 fw-normal text-white-50">Kg</span>
-                </h2>
-            </div>
-        </div>
-    </div>
-
-    <!-- Card 4: Varietas Benih (Cyan/Info) -->
-    <div class="col-md-6 col-xl-3">
-        <div class="card border-0 shadow-sm bg-info text-white h-100" style="border-radius: 14px;">
-            <div class="card-body p-3 d-flex flex-column justify-content-between">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-white-50 fw-semibold small text-uppercase">Varietas Benih</span>
-                    <div class="bg-white bg-opacity-25 rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                        <i class="bi bi-tags fs-4 text-white"></i>
-                    </div>
-                </div>
-                <h2 class="fw-bold mb-0 display-6">
-                    {{ $totalVarietas ?? 0 }} 
-                    <span class="fs-6 fw-normal text-white-50">Varietas</span>
-                </h2>
             </div>
         </div>
     </div>
 </div>
 
-<!-- SUB-HEADER AKTIVITAS TERBARU -->
-<div class="mb-3">
-    <h5 class="fw-bold mb-1 text-dark">Aktivitas Terbaru</h5>
-    <p class="text-muted small mb-0">Aktivitas data panen dan pencatatan mutasi stok benih terkini.</p>
-</div>
-
-<!-- BARIS 2: TABEL AKTIVITAS PANEN & KARTU STOK MUTASI -->
-<div class="row g-3">
-    <!-- Tabel Aktivitas Panen Terbaru -->
-    <div class="col-lg-7">
-        <div class="card border-0 shadow-sm h-100" style="border-radius: 14px; overflow: hidden;">
-            <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold mb-0 text-dark">
-                    <i class="bi bi-journal-text me-2 text-success"></i>Aktivitas Panen Terbaru
-                </h6>
-                <a href="{{ route('panen.index') }}" class="btn btn-sm btn-outline-success rounded-pill px-3">Lihat Semua</a>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="ps-3 py-3">Tanggal</th>
-                                <th class="py-3">Provinsi</th>
-                                <th class="py-3">Komoditas</th>
-                                <th class="text-end pe-3 py-3">Hasil (Ton)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($panenTerbaru ?? [] as $panen)
-                            <tr>
-                                <td class="ps-3 fw-semibold">{{ $panen->tanggal_panen_realisasi ?? $panen->tanggal_panen ?? $panen->tanggal_estimasi_panen }}</td>
-                                <td>{{ $panen->provinsi->nama_provinsi ?? '-' }}</td>
-                                <td>
-                                    <span class="badge bg-{{ strtolower($panen->komoditas) === 'padi' ? 'success' : 'warning' }} px-2 py-1">
-                                        {{ strtoupper($panen->komoditas) }}
-                                    </span>
-                                </td>
-                                <td class="text-end pe-3 fw-bold">{{ number_format($panen->jumlah_panen_ton, 2) }} Ton</td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="4" class="text-center py-4 text-muted">Belum ada aktivitas data panen terbaru.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Kartu Akumulasi Stok Masuk & Keluar -->
-    <div class="col-lg-5 d-flex flex-column gap-3">
-        <!-- Stok Masuk -->
-        <div class="card border-0 shadow-sm border-start border-4 border-success h-100" style="border-radius: 14px;">
-            <div class="card-body py-3 px-4 d-flex flex-column justify-content-center">
-                <small class="text-muted fw-bold text-uppercase" style="font-size: 0.75rem;">Akumulasi Stok Masuk (Konversi/Pengadaan)</small>
-                <h3 class="text-success fw-bold mt-2 mb-0">+{{ number_format($stokMasukKg ?? 0, 2) }} Kg</h3>
-            </div>
-        </div>
-
-        <!-- Stok Keluar -->
-        <div class="card border-0 shadow-sm border-start border-4 border-danger h-100" style="border-radius: 14px;">
-            <div class="card-body py-3 px-4 d-flex flex-column justify-content-center">
-                <small class="text-muted fw-bold text-uppercase" style="font-size: 0.75rem;">Akumulasi Stok Keluar (Distribusi/Bantuan)</small>
-                <h3 class="text-danger fw-bold mt-2 mb-0">-{{ number_format($stokKeluarKg ?? 0, 2) }} Kg</h3>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- SCRIPT CHART.JS ADMIN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById('adminTrenChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov'],
+                datasets: [
+                    { label: 'Padi (Ton)', data: [120, 145, 160, 130, 175, 168], backgroundColor: '#106742', borderRadius: 6 },
+                    { label: 'Jagung (Ton)', data: [65, 80, 75, 90, 60, 55], backgroundColor: '#ffc107', borderRadius: 6 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, grid: { borderDash: [4, 4] } }
+                }
+            }
+        });
+    });
+</script>
 @endsection

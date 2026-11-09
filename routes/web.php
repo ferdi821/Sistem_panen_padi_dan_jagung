@@ -41,6 +41,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
         Route::get('/settings', [SystemSettingController::class, 'index'])->name('settings.index');
 
+        // MANAJEMEN RIWAYAT MUTASI (KHUSUS ADMIN PUSAT)
+        Route::get('/stok-benih/riwayat/{id}/edit', [StokBenihController::class, 'editRiwayat'])->name('stok.riwayat.edit');
+        Route::put('/stok-benih/riwayat/{id}', [StokBenihController::class, 'updateRiwayat'])->name('stok.riwayat.update');
+        Route::delete('/stok-benih/riwayat/{id}', [StokBenihController::class, 'destroyRiwayat'])->name('stok.riwayat.destroy');
+
         // LAPORAN ADMIN PUSAT
         Route::get('/admin/rekap-bbpsip', [AdminRekapReportController::class, 'index'])->name('admin.report.rekap');
         Route::get('/admin/rekap-bbpsip/pdf', [AdminRekapReportController::class, 'exportPdf'])->name('admin.report.rekap.pdf');
@@ -54,14 +59,13 @@ Route::middleware(['auth'])->group(function () {
 
     // Transaksi (Admin & Petugas)
     Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
-        Route::get('/panen/create', [PanenController::class, 'create'])->name('panen.create');
         Route::post('/panen', [PanenController::class, 'store'])->name('panen.store');
+        Route::put('/panen/{panen}', [PanenController::class, 'update'])->name('panen.update');
         Route::delete('/panen/{panen}', [PanenController::class, 'destroy'])->name('panen.destroy');
-        
-        Route::get('/stok-benih/keluar', [StokBenihController::class, 'createKeluar'])->name('stok.keluar.create');
+            
         Route::post('/stok-benih/keluar', [StokBenihController::class, 'storeKeluar'])->name('stok.keluar.store');
+        Route::post('/stok-benih/masuk', [StokBenihController::class, 'storeMasuk'])->name('stok.masuk.store');
 
-        // Tambahkan rute Edit, Update, & Destroy Stok Benih di sini
         Route::get('/stok-benih/{id}/edit', [StokBenihController::class, 'edit'])->name('stok.edit');
         Route::put('/stok-benih/{id}', [StokBenihController::class, 'update'])->name('stok.update');
         Route::delete('/stok-benih/{id}', [StokBenihController::class, 'destroy'])->name('stok.destroy');

@@ -7,49 +7,41 @@
         <a href="{{ route('stok.index') }}" class="btn btn-secondary">Kembali</a>
     </div>
 
-    <div class="card shadow col-md-8 mx-auto">
-        <div class="card-body">
+    <div class="card shadow col-md-8 mx-auto" style="border-radius: 14px;">
+        <div class="card-body p-4">
             <form action="{{ route('stok.update', $stok->id) }}" method="POST">
                 @csrf
                 @method('PUT')
 
                 <div class="mb-3">
                     <label class="form-label fw-bold">Provinsi</label>
-                    <select name="provinsi_id" class="form-select @error('provinsi_id') is-invalid @enderror" required>
-                        @foreach($provinsis as $provinsi)
-                            <option value="{{ $provinsi->id }}" {{ $stok->provinsi_id == $provinsi->id ? 'selected' : '' }}>
-                                {{ $provinsi->nama_provinsi }}
+                    <select name="provinsi_id" class="form-select" required>
+                        @foreach($provinsis as $p)
+                            <option value="{{ $p->id }}" {{ $stok->provinsi_id == $p->id ? 'selected' : '' }}>
+                                {{ $p->nama_provinsi }}
                             </option>
                         @endforeach
                     </select>
-                    @error('provinsi_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
                 </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-bold">Benih</label>
-                    <select name="benih_id" class="form-select @error('benih_id') is-invalid @enderror" required>
-                        @foreach($benihs as $benih)
-                            <option value="{{ $benih->id }}" {{ $stok->benih_id == $benih->id ? 'selected' : '' }}>
-                                [{{ $benih->kode_benih }}] {{ $benih->nama_benih }} - {{ $benih->varietas }} ({{ strtoupper($benih->komoditas) }})
+                    <select name="benih_id" class="form-select" required>
+                        @foreach($benihs as $b)
+                            <option value="{{ $b->id }}" {{ $stok->benih_id == $b->id ? 'selected' : '' }}>
+                                [{{ $b->kode_benih }}] {{ $b->nama_benih }} - {{ $b->varietas }} ({{ strtoupper($b->komoditas) }})
                             </option>
                         @endforeach
                     </select>
-                    @error('benih_id')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
                 </div>
 
+                <!-- LABEL DISUDAH DIUBAH KE TON -->
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Jumlah Stok Tersedia (Kg)</label>
-                    <input type="number" step="0.01" name="jumlah_stok_kg" class="form-class form-control @error('jumlah_stok_kg') is-invalid @enderror" value="{{ old('jumlah_stok_kg', $stok->jumlah_stok_kg) }}" required>
-                    @error('jumlah_stok_kg')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
+                    <label class="form-label fw-bold">Jumlah Stok Tersedia (Ton)</label>
+                    <input type="number" step="0.01" name="jumlah_stok_kg" class="form-control" value="{{ old('jumlah_stok_kg', $stok->jumlah_stok_kg) }}" required>
                 </div>
 
-                <div class="d-flex justify-content-end gap-2">
+                <div class="d-flex justify-content-end gap-2 mt-4">
                     <a href="{{ route('stok.index') }}" class="btn btn-secondary">Batal</a>
                     <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
                 </div>

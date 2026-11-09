@@ -36,7 +36,7 @@
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Jumlah (Kg)</label>
+                    <label class="form-label fw-bold">Jumlah (Ton)</label>
                     <input type="number" step="0.01" name="jumlah_kg" class="form-control" value="{{ old('jumlah_kg', $transaksi->jumlah_kg) }}" required>
                 </div>
 

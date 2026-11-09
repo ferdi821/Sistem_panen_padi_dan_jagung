@@ -5,6 +5,7 @@
     
     // Deteksi Role User
     $userRole = 'GUEST';
+    $userRoleShort = 'GUEST';
     if ($currentUser) {
         if (method_exists($currentUser, 'getRoleNames') && $currentUser->getRoleNames()->isNotEmpty()) {
             $userRole = strtoupper($currentUser->getRoleNames()->first());
@@ -13,13 +14,30 @@
         }
     }
 
-    // Deteksi Wilayah Provinsi (Aman untuk Admin Pusat & Pimpinan karena akan null)
+    if ($userRole === 'ADMIN_PUSAT') {
+        $userRoleShort = 'ADMIN';
+    } elseif ($userRole === 'PETUGAS_PROVINSI') {
+        $userRoleShort = 'PP';
+    }
+
+    // Deteksi Wilayah Provinsi
     $namaProvinsi = null;
+    $namaProvinsiShort = null;
     if ($currentUser) {
         if (isset($currentUser->provinsi->nama_provinsi)) {
             $namaProvinsi = $currentUser->provinsi->nama_provinsi;
         } elseif (isset($currentUser->nama_provinsi)) {
             $namaProvinsi = $currentUser->nama_provinsi;
+        }
+    }
+
+    if ($namaProvinsi) {
+        // Singkat kata (misal Jawa Barat -> JB)
+        $words = explode(' ', trim($namaProvinsi));
+        if (count($words) >= 2) {
+            $namaProvinsiShort = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+        } else {
+            $namaProvinsiShort = strtoupper(substr($namaProvinsi, 0, 4));
         }
     }
 @endphp
@@ -53,7 +71,7 @@
             overflow-x: hidden;
         }
 
-        /* Sidebar Styling (Hijau Gelap Khas SIPANEN) */
+        /* Sidebar Styling */
         #sidebar {
             width: var(--sidebar-width);
             height: 100vh;
@@ -63,7 +81,7 @@
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 1000;
+            z-index: 1050;
             display: flex;
             flex-direction: column;
         }
@@ -72,7 +90,6 @@
             width: var(--sidebar-collapsed-width);
         }
 
-        /* Header Logo Sidebar */
         .sidebar-header {
             padding: 1rem;
             display: flex;
@@ -98,14 +115,12 @@
             max-width: 45px;
             object-fit: contain;
             flex-shrink: 0;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
         }
 
         .sidebar-brand-text {
             display: flex;
             flex-direction: column;
             line-height: 1.2;
-            transition: opacity 0.2s ease;
             white-space: nowrap;
         }
 
@@ -117,24 +132,11 @@
             display: none !important;
         }
 
-        /* Navigation Container Scrollable */
         .sidebar-nav {
             padding: 1rem 0.75rem;
             flex: 1;
             overflow-y: auto;
             min-height: 0;
-        }
-
-        /* Styling Scrollbar Tipis */
-        .sidebar-nav::-webkit-scrollbar {
-            width: 5px;
-        }
-        .sidebar-nav::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-        }
-        .sidebar-nav::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.4);
         }
 
         .sidebar-category {
@@ -165,7 +167,6 @@
             text-align: center;
             margin-right: 0.75rem;
             color: rgba(255, 255, 255, 0.75);
-            transition: color 0.2s ease;
         }
 
         #sidebar.collapsed .nav-item-link {
@@ -191,7 +192,6 @@
             color: #106742;
         }
 
-        /* User Profile Footer */
         .sidebar-footer {
             padding: 0.75rem;
             border-top: 1px solid rgba(255, 255, 255, 0.15);
@@ -236,46 +236,104 @@
             display: inline-block;
         }
 
-        /* Content Body Wrapper */
         #main-wrapper {
             margin-left: var(--sidebar-width);
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            min-height: 100vh;
+            min-height: auto;
             display: flex;
             flex-direction: column;
+            width: calc(100% - var(--sidebar-width));
         }
 
         #sidebar.collapsed ~ #main-wrapper {
             margin-left: var(--sidebar-collapsed-width);
+            width: calc(100% - var(--sidebar-collapsed-width));
         }
 
+        /* TOPBAR PRESI PADA RESOLUSI KECIL */
         .topbar {
             background: #ffffff;
             border-bottom: 1px solid #e9ecef;
-            padding: 0.85rem 2rem;
+            padding: 0.5rem 0.75rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            height: 70px;
+            min-height: 60px;
         }
 
         .topbar-badge {
             background-color: #f1f5f3;
             border-radius: 50px;
-            padding: 0.4rem 1rem;
-            font-size: 0.85rem;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.7rem;
             font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.3rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        /* SWITCH NAMA LENGKAP VS SINGKAT DI MOBILE (< 400px) */
+        .badge-full { display: inline-block; }
+        .badge-short { display: none; }
+
+        @media (max-width: 400px) {
+            .badge-full { display: none !important; }
+            .badge-short { display: inline-block !important; }
+            .topbar-subtitle { display: none !important; }
+            .topbar { padding: 0.4rem 0.5rem; }
+        }
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1040;
+        }
+
+        @media (max-width: 991.98px) {
+            #sidebar {
+                left: -260px;
+                width: var(--sidebar-width) !important;
+            }
+
+            #sidebar.mobile-show {
+                left: 0;
+            }
+
+            #sidebar.mobile-show + .sidebar-overlay {
+                display: block;
+            }
+
+            #main-wrapper {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+
+            .sidebar-brand-text,
+            .sidebar-category,
+            .nav-text,
+            .user-info-text,
+            .scope-badge {
+                display: flex !important;
+            }
+            #sidebar.mobile-show .sidebar-category { display: block !important; }
+            #sidebar.mobile-show .nav-item-link { justify-content: flex-start !important; }
+            #sidebar.mobile-show .nav-item-link i { margin-right: 0.75rem !important; }
         }
     </style>
 </head>
 <body>
 
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+
     <!-- SIDEBAR -->
     <aside id="sidebar">
-        <!-- Logo & Brand Header -->
         <div class="sidebar-header">
             <a href="{{ Route::has('dashboard') ? route('dashboard') : '#' }}" class="sidebar-brand">
                 <img src="{{ asset('images/logo-removebg-preview.png') }}" 
@@ -293,7 +351,6 @@
             </button>
         </div>
 
-        <!-- Navigation Links -->
         <nav class="sidebar-nav">
             <a href="{{ Route::has('dashboard') ? route('dashboard') : '#' }}" class="nav-item-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i>
@@ -325,18 +382,12 @@
                 <i class="bi bi-boxes"></i>
                 <span class="nav-text">Stok Benih Wilayah</span>
             </a>
-            @hasanyrole('admin_pusat|petugas_provinsi')
-            <a href="{{ Route::has('stok.keluar.create') ? route('stok.keluar.create') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.keluar.*') ? 'active' : '' }}">
-                <i class="bi bi-box-arrow-up-right"></i>
-                <span class="nav-text">Stok Keluar / Distribusi</span>
-            </a>
-            @endhasanyrole
+            <!-- Menu Stok Keluar / Distribusi sudah dihapus karena digabung modal popup di menu Stok Benih Wilayah -->
             <a href="{{ Route::has('stok.riwayat') ? route('stok.riwayat') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.riwayat') ? 'active' : '' }}">
                 <i class="bi bi-clock-history"></i>
                 <span class="nav-text">Riwayat Mutasi</span>
             </a>
 
-            <!-- BAGIAN LAPORAN TERPISAH SESUAI ROLE -->
             <div class="sidebar-category">LAPORAN</div>
 
             @hasrole('admin_pusat')
@@ -366,7 +417,6 @@
             @endhasrole
         </nav>
 
-        <!-- User Profile Footer -->
         <div class="sidebar-footer">
             <div class="user-card">
                 <div class="d-flex align-items-center gap-2 overflow-hidden">
@@ -393,25 +443,39 @@
 
     <!-- MAIN CONTENT WRAPPER -->
     <div id="main-wrapper">
-        <header class="topbar">
-            <div>
-                <h6 class="fw-bold mb-0">Sistem Informasi Pertanian & Stok Benih</h6>
-                <small class="text-muted" style="font-size: 0.75rem;">SIPANEN Nasional</small>
+        <!-- TOPBAR HEADER -->
+        <header class="topbar flex-nowrap gap-2">
+            <div class="d-flex align-items-center gap-2 overflow-hidden" style="min-width: 0;">
+                <button id="mobileSidebarToggle" class="btn btn-sm btn-outline-success d-lg-none rounded-3 flex-shrink-0 px-2 py-1">
+                    <i class="bi bi-list fs-6"></i>
+                </button>
+                <div class="overflow-hidden" style="min-width: 0;">
+                    <h6 class="fw-bold mb-0 text-truncate" style="font-size: clamp(0.78rem, 2.8vw, 0.9rem); line-height: 1.2;">
+                        Sistem Informasi Pertanian & Stok Benih
+                    </h6>
+                    <small class="text-muted text-truncate topbar-subtitle" style="font-size: 0.65rem;">
+                        SIPANEN Nasional
+                    </small>
+                </div>
             </div>
-            <div class="topbar-badge">
-                <span>Halo, {{ $userName }}</span>
+
+            <!-- BADGE USER -->
+            <div class="topbar-badge ms-auto flex-shrink-0">
+                <span class="d-none d-md-inline me-1">Halo, {{ $userName }}</span>
                 @if($namaProvinsi)
-                    <span class="badge bg-secondary text-uppercase ms-1">
-                        {{ $namaProvinsi }}
+                    <span class="badge bg-secondary text-uppercase" style="font-size: 0.6rem;">
+                        <span class="badge-full">{{ $namaProvinsi }}</span>
+                        <span class="badge-short">{{ $namaProvinsiShort }}</span>
                     </span>
                 @endif
-                <span class="badge bg-success text-uppercase" style="background-color: var(--primary-green) !important;">
-                    {{ $userRole }}
+                <span class="badge bg-success text-uppercase" style="background-color: var(--primary-green) !important; font-size: 0.6rem;">
+                    <span class="badge-full">{{ $userRole }}</span>
+                    <span class="badge-short">{{ $userRoleShort }}</span>
                 </span>
             </div>
         </header>
 
-        <main class="p-4 flex-grow-1">
+        <main class="p-2 p-md-4">
             @yield('content')
         </main>
     </div>
@@ -419,22 +483,37 @@
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Sidebar Collapsible Toggle Script -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const sidebar = document.getElementById("sidebar");
-            const toggleBtn = document.getElementById("sidebarToggle");
+            const sidebarToggle = document.getElementById("sidebarToggle");
+            const mobileSidebarToggle = document.getElementById("mobileSidebarToggle");
+            const sidebarOverlay = document.getElementById("sidebarOverlay");
 
-            toggleBtn.addEventListener("click", function() {
-                sidebar.classList.toggle("collapsed");
-                if (sidebar.classList.contains("collapsed")) {
-                    localStorage.setItem("sipanen-sidebar-state", "collapsed");
-                } else {
-                    localStorage.setItem("sipanen-sidebar-state", "expanded");
-                }
-            });
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener("click", function() {
+                    if (window.innerWidth >= 992) {
+                        sidebar.classList.toggle("collapsed");
+                        localStorage.setItem("sipanen-sidebar-state", sidebar.classList.contains("collapsed") ? "collapsed" : "expanded");
+                    } else {
+                        sidebar.classList.remove("mobile-show");
+                    }
+                });
+            }
 
-            if (localStorage.getItem("sipanen-sidebar-state") === "collapsed") {
+            if (mobileSidebarToggle) {
+                mobileSidebarToggle.addEventListener("click", function() {
+                    sidebar.classList.add("mobile-show");
+                });
+            }
+
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener("click", function() {
+                    sidebar.classList.remove("mobile-show");
+                });
+            }
+
+            if (window.innerWidth >= 992 && localStorage.getItem("sipanen-sidebar-state") === "collapsed") {
                 sidebar.classList.add("collapsed");
             }
         });

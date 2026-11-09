@@ -39,16 +39,20 @@ class DashboardController extends Controller
             ->whereRaw('LOWER(komoditas) = ?', ['jagung'])
             ->sum('jumlah_panen_ton');
 
-        // 3. Total Persediaan Benih di Gudang (Kg) - Dipertahankan sesuai sistem yang berjalan
+        // 3. Total Persediaan Benih di Gudang (Kg)
         $totalStokKg = (clone $queryStok)->sum('jumlah_stok_kg');
 
-        // 4. Total Varietas Master Benih - Dipertahankan sesuai sistem yang berjalan
+        // 4. Total Varietas Master Benih
         $totalVarietas = 0;
         try {
-            if (class_exists(\App\Models\Benih::class)) {
-                $totalVarietas = \App\Models\Benih::count();
-            } elseif (Schema::hasTable('benihs')) {
-                $totalVarietas = DB::table('benihs')->count();
+            if ($user->hasRole('petugas_provinsi') && $user->provinsi_id) {
+                $totalVarietas = (clone $queryStok)->with('benih')->get()->pluck('benih.varietas')->filter()->unique()->count();
+            } else {
+                if (class_exists(\App\Models\Benih::class)) {
+                    $totalVarietas = \App\Models\Benih::count();
+                } elseif (Schema::hasTable('benihs')) {
+                    $totalVarietas = DB::table('benihs')->count();
+                }
             }
         } catch (\Exception $e) {
             $totalVarietas = 0;
@@ -61,6 +65,25 @@ class DashboardController extends Controller
         // 5 Aktivitas Panen Terbaru
         $panenTerbaru = (clone $queryPanen)->with('provinsi')->latest()->take(5)->get();
 
+        // -------------------------------------------------------------
+        // PEMISAHAN VIEW BERDASARKAN ROLE USER
+        // -------------------------------------------------------------
+        if ($user->hasRole('petugas_provinsi')) {
+            $namaProvinsi = $user->provinsi->nama_provinsi ?? 'Wilayah Saya';
+
+            return view('dashboard.petugas', compact(
+                'namaProvinsi',
+                'totalPadiTon',
+                'totalJagungTon',
+                'totalStokKg',
+                'totalVarietas',
+                'stokMasukKg',
+                'stokKeluarKg',
+                'panenTerbaru'
+            ));
+        }
+
+        // Default: Admin Pusat & Role Lainnya ke dashboard.index
         return view('dashboard.index', compact(
             'totalPadiTon',
             'totalJagungTon',

@@ -9,13 +9,8 @@ class BenihController extends Controller
 {
     public function index()
     {
-        $benihs = Benih::latest()->paginate(10);
+        $benihs = Benih::latest()->paginate(5); // Dibatasi 5 baris agar pas seragam
         return view('benih.index', compact('benihs'));
-    }
-
-    public function create()
-    {
-        return view('benih.create');
     }
 
     public function store(Request $request)

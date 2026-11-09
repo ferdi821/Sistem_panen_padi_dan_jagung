@@ -2,6 +2,9 @@
 
 @section('title', 'Rekapitulasi Stok Benih Wilayah - Excel BBPSIP')
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_green.css">
+
 @section('content')
 <div class="container-fluid">
     
@@ -17,28 +20,43 @@
         </div>
     </div>
 
-    <!-- Filter Form -->
+    <!-- Filter Form Manual & Datepicker Kalender -->
     <div class="card border-0 shadow-sm mb-3" style="border-radius: 10px;">
         <div class="card-body p-2">
             <form action="{{ route('petugas.report.rekap') }}" method="GET" class="row g-2 align-items-center">
                 <div class="col-md-3">
-                    <select name="periode" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <select name="periode" id="periodeSelect" class="form-select form-select-sm" onchange="handlePeriodeChange(this.value)">
                         <option value="hari_ini" {{ $periode == 'hari_ini' ? 'selected' : '' }}>Hari Ini</option>
                         <option value="minggu_ini" {{ $periode == 'minggu_ini' ? 'selected' : '' }}>Minggu Ini</option>
                         <option value="bulan_ini" {{ $periode == 'bulan_ini' ? 'selected' : '' }}>Bulan Ini</option>
                         <option value="tahun_ini" {{ $periode == 'tahun_ini' ? 'selected' : '' }}>Tahun Ini</option>
+                        <option value="custom" {{ $periode == 'custom' ? 'selected' : '' }}>Custom Kalender</option>
                     </select>
                 </div>
+
+                <div class="col-md-4 {{ $periode == 'custom' ? '' : 'd-none' }}" id="customDateContainer">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white"><i class="bi bi-calendar-range text-success"></i></span>
+                        <input type="text" id="rangePicker" class="form-control bg-white" placeholder="Pilih Rentang Tanggal..." readonly>
+                        <input type="hidden" name="start_date" id="startDate" value="{{ request('start_date', $start->format('Y-m-d')) }}">
+                        <input type="hidden" name="end_date" id="endDate" value="{{ request('end_date', $end->format('Y-m-d')) }}">
+                    </div>
+                </div>
+
                 <div class="col-auto">
-                    <span class="badge bg-light text-dark border">
-                        Periode: {{ $start->format('d M Y') }} s.d {{ $end->format('d M Y') }}
+                    <button type="submit" class="btn btn-sm btn-success px-3">Filter</button>
+                </div>
+
+                <div class="col-auto ms-auto">
+                    <span class="badge bg-light text-dark border py-2 px-3">
+                        <i class="bi bi-clock me-1 text-muted"></i> Periode Active: {{ $start->format('d M Y') }} s.d {{ $end->format('d M Y') }}
                     </span>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Tabel Matriks Per Kabupaten Format Excel BBPSIP -->
+    <!-- Tabel Matriks Per Kabupaten -->
     <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
         <div class="card-body p-0">
             <div class="table-responsive" style="max-height: 70vh;">
@@ -126,4 +144,33 @@
     </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const startVal = document.getElementById('startDate').value;
+    const endVal = document.getElementById('endDate').value;
+
+    flatpickr("#rangePicker", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        defaultDate: [startVal, endVal],
+        onClose: function(selectedDates, dateStr, instance) {
+            if (selectedDates.length === 2) {
+                document.getElementById('startDate').value = instance.formatDate(selectedDates[0], "Y-m-d");
+                document.getElementById('endDate').value = instance.formatDate(selectedDates[1], "Y-m-d");
+            }
+        }
+    });
+});
+
+function handlePeriodeChange(val) {
+    const customContainer = document.getElementById('customDateContainer');
+    if (val === 'custom') {
+        customContainer.classList.remove('d-none');
+    } else {
+        customContainer.classList.add('d-none');
+    }
+}
+</script>
 @endsection

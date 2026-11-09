@@ -50,7 +50,7 @@
                             <input type="text" name="satuan" class="form-control" value="{{ old('satuan', $benih->satuan) }}" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Stok Minimum Peringatan (Kg)</label>
+                            <label class="form-label">Stok Minimum Peringatan (Ton)</label>
                             <input type="number" step="0.01" name="stok_minimum" class="form-control" value="{{ old('stok_minimum', $benih->stok_minimum) }}" required>
                         </div>
                     </div>

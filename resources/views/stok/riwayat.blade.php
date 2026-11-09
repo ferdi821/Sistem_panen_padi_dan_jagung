@@ -31,7 +31,7 @@
                         <th>Varietas Benih</th>
                         <th>Jenis Transaksi</th>
                         <th>Sumber / Tujuan</th>
-                        <th>Jumlah (Kg)</th>
+                        <th>Jumlah (Ton)</th>
                         <th>Petugas</th>
                         @hasrole('admin_pusat')
                         <th class="text-center">Aksi</th>
@@ -52,7 +52,7 @@
                             @endif
                         </td>
                         <td>{{ $item->sumber_tujuan }}</td>
-                        <td class="fw-bold">{{ number_format($item->jumlah_kg, 2) }} Kg</td>
+                        <td class="fw-bold">{{ number_format($item->jumlah_kg, 2) }} Ton</td>
                         <td>{{ $item->user->name ?? 'Sistem' }}</td>
                         @hasrole('admin_pusat')
                         <td class="text-center">
