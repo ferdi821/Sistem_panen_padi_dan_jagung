@@ -15,8 +15,6 @@ class StokBenihController extends Controller
     {
         $user = auth()->user();
 
-        // 1. OTOMATIS SYNC: Pastikan semua Master Benih (Padi & Jagung) memiliki record di stok_benihs
-        // untuk provinsi petugas yang sedang login.
         if ($user->hasRole('petugas_provinsi') && $user->provinsi_id) {
             $allBenih = Benih::all();
             foreach ($allBenih as $benih) {
@@ -32,21 +30,18 @@ class StokBenihController extends Controller
             }
         }
 
-        // 2. Query Data untuk Tabel Utama
         $query = StokBenih::with(['provinsi', 'benih']);
         if ($user->hasRole('petugas_provinsi')) {
             $query->where('provinsi_id', $user->provinsi_id);
         }
         $stokList = $query->latest()->paginate(5);
 
-        // 3. Query Data untuk Dropdown Modal (Stok Masuk & Stok Keluar)
         $stokQuery = StokBenih::with(['provinsi', 'benih']);
         if ($user->hasRole('petugas_provinsi')) {
             $stokQuery->where('provinsi_id', $user->provinsi_id);
         }
         $stokOptions = $stokQuery->get();
 
-        // 4. Data Master untuk Modal Popup Edit Stok di Index
         $provinsis = Provinsi::all();
         $benihs    = Benih::all();
 
@@ -67,7 +62,6 @@ class StokBenihController extends Controller
         $stok = StokBenih::findOrFail($id);
         $user = auth()->user();
 
-        // Validasi Keamanan Backend: Petugas Provinsi dilarang mengedit stok provinsi lain
         if ($user->hasRole('petugas_provinsi') && $stok->provinsi_id != $user->provinsi_id) {
             return back()->with('error', 'Akses ditolak! Anda hanya berhak mengedit data stok wilayah provinsi Anda.');
         }
@@ -78,7 +72,6 @@ class StokBenihController extends Controller
             'jumlah_stok_kg' => 'required|numeric|min:0',
         ]);
 
-        // Jika Petugas Provinsi, paksa provinsi_id tetap ke provinsi milik petugas
         if ($user->hasRole('petugas_provinsi')) {
             $validated['provinsi_id'] = $user->provinsi_id;
         }
@@ -230,7 +223,7 @@ class StokBenihController extends Controller
                 'jumlah_kg'         => $validated['jumlah_kg'],
                 'stok_sesudah'      => $stok->jumlah_stok_kg,
                 'sumber_tujuan'     => $validated['sumber_tujuan'],
-                'tanggal_transaksi' => $validated['tanggal_transaksi'],
+                'tanggal_transaksi' => \Carbon\Carbon::parse($validated['tanggal_transaksi']),
                 'keterangan'        => $validated['keterangan'],
             ]);
 

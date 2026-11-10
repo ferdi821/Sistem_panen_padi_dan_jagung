@@ -7,12 +7,25 @@
 <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_green.css">
 
 @section('content')
+<style>
+    /* Custom Styling Garis Pembatas Header Tabel */
+    .table-rekap-excel th, .table-rekap-excel td {
+        border-color: #a0a0a0 !important;
+    }
+    .border-thick-bottom {
+        border-bottom: 1.5px solid #212529 !important;
+    }
+    .border-thick-right {
+        border-right: 1.5px solid #212529 !important;
+    }
+</style>
+
 <div class="container-fluid">
     
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
             <h4 class="fw-bold mb-1" style="color: #106742;">Data Stok Benih Padi/Jagung Lingkup BBPSIP</h4>
-            <p class="text-muted mb-0 small">Format detail breakdown per varietas presisi Excel BBPSIP (34 Provinsi).</p>
+            <p class="text-muted mb-0 small">Format detail breakdown per varietas presisi Excel BBPSIP (38 Provinsi).</p>
         </div>
         <div>
             <a href="{{ route('admin.report.rekap.pdf', request()->all()) }}" target="_blank" class="btn btn-danger btn-sm shadow-sm">
@@ -21,38 +34,33 @@
         </div>
     </div>
 
-    <!-- Filter Form & Date Range Picker Kalender -->
+    <!-- Filter Form Direct Date Range Picker Kalender -->
     <div class="card border-0 shadow-sm mb-3" style="border-radius: 10px;">
         <div class="card-body p-2">
             <form action="{{ route('admin.report.rekap') }}" method="GET" class="row g-2 align-items-center">
-                <!-- Dropdown Quick Filter -->
-                <div class="col-md-3">
-                    <select name="periode" id="periodeSelectAdmin" class="form-select form-select-sm" onchange="handlePeriodeChangeAdmin(this.value)">
-                        <option value="hari_ini" {{ $periode == 'hari_ini' ? 'selected' : '' }}>Hari Ini</option>
-                        <option value="minggu_ini" {{ $periode == 'minggu_ini' ? 'selected' : '' }}>Minggu Ini</option>
-                        <option value="bulan_ini" {{ $periode == 'bulan_ini' ? 'selected' : '' }}>Bulan Ini</option>
-                        <option value="tahun_ini" {{ $periode == 'tahun_ini' ? 'selected' : '' }}>Tahun Ini</option>
-                        <option value="custom" {{ $periode == 'custom' ? 'selected' : '' }}>Custom Kalender</option>
-                    </select>
-                </div>
-
-                <!-- Input Tanggal Kalender Popup -->
-                <div class="col-md-4 {{ $periode == 'custom' ? '' : 'd-none' }}" id="customDateContainerAdmin">
+                
+                <!-- Direct Date Range Picker Input -->
+                <div class="col-md-5">
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white"><i class="bi bi-calendar-range text-success"></i></span>
-                        <input type="text" id="rangePickerAdmin" class="form-control bg-white" placeholder="Pilih Rentang Tanggal..." readonly>
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar-range text-success"></i></span>
+                        <input type="text" id="rangePickerAdmin" class="form-control bg-white border-start-0" placeholder="Pilih Rentang Tanggal (Kalender)..." readonly style="cursor: pointer;">
                         <input type="hidden" name="start_date" id="startDateAdmin" value="{{ request('start_date', $start->format('Y-m-d')) }}">
                         <input type="hidden" name="end_date" id="endDateAdmin" value="{{ request('end_date', $end->format('Y-m-d')) }}">
                     </div>
                 </div>
 
                 <div class="col-auto">
-                    <button type="submit" class="btn btn-sm btn-success px-3">Filter</button>
+                    <button type="submit" class="btn btn-sm btn-success px-3" style="background-color: #106742; border: none;">
+                        <i class="bi bi-funnel-fill me-1"></i> Filter Laporan
+                    </button>
+                    @if(request()->has('start_date'))
+                        <a href="{{ route('admin.report.rekap') }}" class="btn btn-sm btn-outline-secondary px-2">Reset</a>
+                    @endif
                 </div>
 
                 <div class="col-auto ms-auto">
                     <span class="badge bg-light text-dark border py-2 px-3">
-                        <i class="bi bi-clock me-1 text-muted"></i> Periode Active: {{ $start->format('d M Y') }} s.d {{ $end->format('d M Y') }}
+                        <i class="bi bi-clock me-1 text-muted"></i> Periode Aktif: {{ $start->format('d M Y') }} s.d {{ $end->format('d M Y') }}
                     </span>
                 </div>
             </form>
@@ -63,31 +71,32 @@
     <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
         <div class="card-body p-0">
             <div class="table-responsive" style="max-height: 75vh;">
-                <table class="table table-bordered table-hover align-middle mb-0 text-center" style="font-size: 0.76rem; border-color: #dee2e6;">
+                <table class="table table-bordered table-hover align-middle mb-0 text-center table-rekap-excel" style="font-size: 0.76rem;">
                     <thead class="align-middle text-nowrap" style="background-color: #f8f9fa;">
                         <!-- Header Baris 1 -->
                         <tr class="fw-bold">
                             <th rowspan="3" width="30px" class="bg-light">No</th>
                             <th rowspan="3" width="200px" class="bg-light text-start">Satker</th>
-                            <th colspan="4" class="table-primary">Target (Ton)</th>
-                            <th rowspan="3" width="70px" class="bg-secondary text-white">Total</th>
-                            <th rowspan="3" width="70px" class="bg-warning text-dark">Kontrol</th>
-                            <th colspan="4" class="table-success">Sudah Terdistribusi</th>
-                            <th colspan="4" class="table-info">Benih Tersedia</th>
-                            <th colspan="4" class="table-light">Benih (Prosesing)</th>
-                            <th colspan="6" class="table-warning">Benih (Persiapan Panen)</th>
+                            <th colspan="4" class="table-primary border-thick-bottom border-thick-right">Target (Ton)</th>
+                            <th rowspan="3" width="70px" class="bg-secondary text-white border-thick-right">Total</th>
+                            <th rowspan="3" width="70px" class="bg-warning text-dark border-thick-right">Kontrol</th>
+                            <th colspan="4" class="table-success border-thick-bottom">Sudah Terdistribusi</th>
+                            <th colspan="4" class="table-info border-thick-bottom">Benih Tersedia</th>
+                            <th colspan="4" class="table-light border-thick-bottom">Benih (Prosesing)</th>
+                            <th colspan="6" class="table-warning border-thick-bottom">Benih (Persiapan Panen)</th>
                         </tr>
                         <!-- Header Baris 2 -->
                         <tr class="fw-bold">
-                            <th colspan="2">FS</th><th colspan="2">SS</th>
-                            <th colspan="2">FS</th><th colspan="2">SS</th>
-                            <th colspan="2">FS</th><th colspan="2">SS</th>
-                            <th colspan="2">FS</th><th colspan="2">SS</th>
-                            <th colspan="3">FS</th><th colspan="3">SS</th>
+                            <th colspan="2" class="border-thick-bottom">FS</th>
+                            <th colspan="2" class="border-thick-bottom border-thick-right">SS</th>
+                            <th colspan="2" class="border-thick-bottom">FS</th><th colspan="2" class="border-thick-bottom">SS</th>
+                            <th colspan="2" class="border-thick-bottom">FS</th><th colspan="2" class="border-thick-bottom">SS</th>
+                            <th colspan="2" class="border-thick-bottom">FS</th><th colspan="2" class="border-thick-bottom">SS</th>
+                            <th colspan="3" class="border-thick-bottom">FS</th><th colspan="3" class="border-thick-bottom">SS</th>
                         </tr>
                         <!-- Header Baris 3 (Sub-Kolom) -->
                         <tr class="fw-bold text-muted small">
-                            <th>Volume (Ton)</th><th>Varietas</th><th>Volume (Ton)</th><th>Varietas</th>
+                            <th>Volume (Ton)</th><th>Varietas</th><th>Volume (Ton)</th><th class="border-thick-right">Varietas</th>
                             <th>Volume (Ton)</th><th>Varietas</th><th>Volume (Ton)</th><th>Varietas</th>
                             <th>Volume (Ton)</th><th>Varietas</th><th>Volume (Ton)</th><th>Varietas</th>
                             <th>Volume (Ton)</th><th>Varietas</th><th>Volume (Ton)</th><th>Varietas</th>
@@ -107,11 +116,11 @@
                                 <td class="fw-bold">{{ number_format((float)$row['target_fs_vol'], 2) }}</td>
                                 <td class="text-start small">{{ $row['target_fs_var'] }}</td>
                                 <td class="fw-bold">{{ number_format((float)$row['target_ss_vol'], 2) }}</td>
-                                <td class="text-start small">{{ $row['target_ss_var'] }}</td>
+                                <td class="text-start small border-thick-right">{{ $row['target_ss_var'] }}</td>
 
                                 @if($rIdx === 0)
-                                    <td rowspan="{{ $satkerData['rowspan'] }}" class="bg-secondary bg-opacity-10 fw-bold align-middle">{{ number_format((float)$satkerData['total'], 2) }}</td>
-                                    <td rowspan="{{ $satkerData['rowspan'] }}" class="bg-warning bg-opacity-10 fw-bold text-danger align-middle">{{ number_format((float)$satkerData['kontrol'], 2) }}</td>
+                                    <td rowspan="{{ $satkerData['rowspan'] }}" class="bg-secondary bg-opacity-10 fw-bold align-middle border-thick-right">{{ number_format((float)$satkerData['total'], 2) }}</td>
+                                    <td rowspan="{{ $satkerData['rowspan'] }}" class="bg-warning bg-opacity-10 fw-bold text-danger align-middle border-thick-right">{{ number_format((float)$satkerData['kontrol'], 2) }}</td>
                                 @endif
 
                                 <td class="fw-bold text-success">{{ number_format((float)$row['distribusi_fs_vol'], 2) }}</td>
@@ -170,14 +179,5 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 });
-
-function handlePeriodeChangeAdmin(val) {
-    const customContainer = document.getElementById('customDateContainerAdmin');
-    if (val === 'custom') {
-        customContainer.classList.remove('d-none');
-    } else {
-        customContainer.classList.add('d-none');
-    }
-}
 </script>
 @endsection

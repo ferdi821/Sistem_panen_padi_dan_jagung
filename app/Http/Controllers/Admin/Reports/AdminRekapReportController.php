@@ -15,8 +15,8 @@ class AdminRekapReportController extends Controller
 {
     public function index(Request $request)
     {
-        $periode = $request->input('periode', 'bulan_ini');
-        [$start, $end] = $this->getFilterDates($periode, $request->start_date, $request->end_date);
+        [$start, $end] = $this->getFilterDates($request->start_date, $request->end_date);
+        $periode = 'custom';
 
         $rekapData = $this->getRekapNasionalData($start, $end);
 
@@ -25,8 +25,8 @@ class AdminRekapReportController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $periode = $request->input('periode', 'bulan_ini');
-        [$start, $end] = $this->getFilterDates($periode, $request->start_date, $request->end_date);
+        [$start, $end] = $this->getFilterDates($request->start_date, $request->end_date);
+        $periode = 'custom';
         $rekapData = $this->getRekapNasionalData($start, $end);
 
         $pdf = Pdf::loadView('reports.pdf.rekap_nasional_pdf', compact('rekapData', 'periode', 'start', 'end'))
@@ -40,13 +40,85 @@ class AdminRekapReportController extends Controller
         $provinsis = Provinsi::orderBy('nama_provinsi', 'asc')->get();
         $rekapData = [];
 
+        $startDateStr = $start->format('Y-m-d');
+        $endDateStr   = $end->format('Y-m-d');
+
         foreach ($provinsis as $prov) {
             $namaSatker = 'BPSIP ' . $prov->nama_provinsi;
 
-            // Ambil seluruh persediaan stok benih di provinsi ini
+            // Ambil stok master
             $stokItems = StokBenih::where('provinsi_id', $prov->id)->with('benih')->get();
 
-            if ($stokItems->isEmpty()) {
+            $subRows = [];
+
+            if ($stokItems->isNotEmpty()) {
+                foreach ($stokItems as $s) {
+                    $varName = $s->benih->varietas ?? '-';
+                    $kelas   = strtoupper($s->benih->kelas_benih ?? 'BR');
+                    $isFS    = ($kelas === 'BD' || $kelas === 'FS');
+
+                    // 1. Cek Transaksi Keluar HANYA pada rentang tanggal filter
+                    $volDist = (float) TransaksiStokBenih::where('stok_benih_id', $s->id)
+                                ->where('jenis_transaksi', 'keluar')
+                                ->whereBetween('tanggal_transaksi', [$startDateStr, $endDateStr])
+                                ->sum('jumlah_kg');
+
+                    // 2. Cek Transaksi Masuk HANYA pada rentang tanggal filter
+                    $volMasuk = (float) TransaksiStokBenih::where('stok_benih_id', $s->id)
+                                ->where('jenis_transaksi', 'masuk')
+                                ->whereBetween('tanggal_transaksi', [$startDateStr, $endDateStr])
+                                ->sum('jumlah_kg');
+
+                    // 3. Cek Catatan Panen HANYA pada rentang tanggal filter
+                    $panen = CatatanPanen::where('provinsi_id', $prov->id)
+                                ->whereBetween('tanggal_panen', [$startDateStr, $endDateStr])
+                                ->first();
+
+                    $volPanen = $panen ? (float) $panen->jumlah_panen_ton : 0.00;
+                    $tglPanen = $panen ? Carbon::parse($panen->tanggal_panen)->format('d/m/Y') : '-';
+
+                    // Hanya tampilkan saldo stok jika ada aktivitas transaksi / panen pada periode ini
+                    $adaAktivitas = ($volDist > 0 || $volMasuk > 0 || $volPanen > 0);
+                    $volTersedia  = $adaAktivitas ? (float) $s->jumlah_stok_kg : 0.00;
+
+                    // Jika ada aktivitas transaksi/panen pada item stok ini di periode terkait, masukkan ke subRows
+                    if ($adaAktivitas) {
+                        $subRows[] = [
+                            'target_fs_vol'     => $isFS ? ($volTersedia + $volDist) : 0.00,
+                            'target_fs_var'     => $isFS ? $varName : '-',
+                            'target_ss_vol'     => !$isFS ? ($volTersedia + $volDist) : 0.00,
+                            'target_ss_var'     => !$isFS ? $varName : '-',
+                            
+                            'distribusi_fs_vol' => $isFS ? $volDist : 0.00,
+                            'distribusi_fs_var' => ($isFS && $volDist > 0) ? $varName : '-',
+                            'distribusi_ss_vol' => !$isFS ? $volDist : 0.00,
+                            'distribusi_ss_var' => (!$isFS && $volDist > 0) ? $varName : '-',
+
+                            'tersedia_fs_vol'   => $isFS ? $volTersedia : 0.00,
+                            'tersedia_fs_var'   => $isFS ? $varName : '-',
+                            'tersedia_ss_vol'   => !$isFS ? $volTersedia : 0.00,
+                            'tersedia_ss_var'   => !$isFS ? $varName : '-',
+
+                            'prosesing_fs_vol'  => 0.00,
+                            'prosesing_fs_var'  => '-',
+                            'prosesing_ss_vol'  => 0.00,
+                            'prosesing_ss_var'  => '-',
+
+                            'persiapan_fs_vol'  => $isFS ? $volPanen : 0.00,
+                            'persiapan_fs_var'  => ($isFS && $volPanen > 0) ? $varName : '-',
+                            'persiapan_fs_tgl'  => ($isFS && $volPanen > 0) ? $tglPanen : '-',
+                            
+                            'persiapan_ss_vol'  => !$isFS ? $volPanen : 0.00,
+                            'persiapan_ss_var'  => (!$isFS && $volPanen > 0) ? $varName : '-',
+                            'persiapan_ss_tgl'  => (!$isFS && $volPanen > 0) ? $tglPanen : '-',
+                        ];
+                    }
+                }
+            }
+
+            // JIKA TIDAK ADA AKTIVITAS TRANSAKSI SAMA SEKALI PADA PERIODE TERSEBUT (Seperti Bulan Desember / Harian Kosong)
+            // Cukup tampilkan 1 BARIS KOSONG RAPI (0.00)
+            if (empty($subRows)) {
                 $subRows = [[
                     'target_fs_vol' => 0.00, 'target_fs_var' => '-', 'target_ss_vol' => 0.00, 'target_ss_var' => '-',
                     'distribusi_fs_vol' => 0.00, 'distribusi_fs_var' => '-', 'distribusi_ss_vol' => 0.00, 'distribusi_ss_var' => '-',
@@ -55,58 +127,6 @@ class AdminRekapReportController extends Controller
                     'persiapan_fs_vol' => 0.00, 'persiapan_fs_var' => '-', 'persiapan_fs_tgl' => '-',
                     'persiapan_ss_vol' => 0.00, 'persiapan_ss_var' => '-', 'persiapan_ss_tgl' => '-',
                 ]];
-            } else {
-                $subRows = [];
-                foreach ($stokItems as $s) {
-                    $varName = $s->benih->varietas ?? '-';
-                    $kelas = strtoupper($s->benih->kelas_benih ?? 'BR');
-                    $isFS = ($kelas === 'BD' || $kelas === 'FS');
-
-                    // Transaksi Keluar real-time berdasarkan stok_benih_id & periode
-                    $volDist = (float) TransaksiStokBenih::where('stok_benih_id', $s->id)
-                                ->where('jenis_transaksi', 'keluar')
-                                ->whereBetween('tanggal_transaksi', [$start->format('Y-m-d'), $end->format('Y-m-d')])
-                                ->sum('jumlah_kg');
-
-                    // Data Catatan Panen real-time berdasarkan provinsi_id & periode
-                    $panen = CatatanPanen::where('provinsi_id', $prov->id)
-                                ->whereBetween('tanggal_panen', [$start->format('Y-m-d'), $end->format('Y-m-d')])
-                                ->first();
-
-                    $volTersedia = (float) $s->jumlah_stok_kg; // Dalam satuan Ton
-                    $volPanen = $panen ? (float) $panen->jumlah_panen_ton : 0.00;
-                    $tglPanen = $panen ? Carbon::parse($panen->tanggal_panen)->format('d/m/Y') : '-';
-
-                    $subRows[] = [
-                        'target_fs_vol'     => $isFS ? ($volTersedia + $volDist) : 0.00,
-                        'target_fs_var'     => $isFS ? $varName : '-',
-                        'target_ss_vol'     => !$isFS ? ($volTersedia + $volDist) : 0.00,
-                        'target_ss_var'     => !$isFS ? $varName : '-',
-                        
-                        'distribusi_fs_vol' => $isFS ? $volDist : 0.00,
-                        'distribusi_fs_var' => $isFS && $volDist > 0 ? $varName : '-',
-                        'distribusi_ss_vol' => !$isFS ? $volDist : 0.00,
-                        'distribusi_ss_var' => !$isFS && $volDist > 0 ? $varName : '-',
-
-                        'tersedia_fs_vol'   => $isFS ? $volTersedia : 0.00,
-                        'tersedia_fs_var'   => $isFS ? $varName : '-',
-                        'tersedia_ss_vol'   => !$isFS ? $volTersedia : 0.00,
-                        'tersedia_ss_var'   => !$isFS ? $varName : '-',
-
-                        'prosesing_fs_vol'  => 0.00,
-                        'prosesing_fs_var'  => '-',
-                        'prosesing_ss_vol'  => 0.00,
-                        'prosesing_ss_var'  => '-',
-
-                        'persiapan_fs_vol'  => $isFS ? $volPanen : 0.00,
-                        'persiapan_fs_var'  => $isFS ? $varName : '-',
-                        'persiapan_fs_tgl'  => $isFS ? $tglPanen : '-',
-                        
-                        'persiapan_ss_vol'  => !$isFS ? $volPanen : 0.00,
-                        'persiapan_ss_var'  => !$isFS ? $varName : '-',
-                        'persiapan_ss_tgl'  => !$isFS ? $tglPanen : '-',
-                    ];
-                }
             }
 
             $totalDist = array_sum(array_column($subRows, 'distribusi_fs_vol')) + array_sum(array_column($subRows, 'distribusi_ss_vol'));
@@ -125,17 +145,11 @@ class AdminRekapReportController extends Controller
         return $rekapData;
     }
 
-    private function getFilterDates($periode, $startDate, $endDate)
+    private function getFilterDates($startDate, $endDate)
     {
-        return match ($periode) {
-            'hari_ini' => [Carbon::today()->startOfDay(), Carbon::today()->endOfDay()],
-            'minggu_ini' => [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()],
-            'tahun_ini' => [Carbon::now()->startOfYear(), Carbon::now()->endOfYear()],
-            'custom' => [
-                $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfMonth(),
-                $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfMonth()
-            ],
-            default => [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()],
-        };
+        $start = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfMonth();
+        $end   = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfMonth();
+
+        return [$start, $end];
     }
 }

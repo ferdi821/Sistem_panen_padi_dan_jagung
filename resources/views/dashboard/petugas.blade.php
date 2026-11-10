@@ -14,12 +14,12 @@
                     Monitoring hasil produksi panen padi, jagung, serta persediaan stok benih wilayah {{ $namaProvinsi ?? '' }} secara real-time.
                 </p>
             </div>
-            <!-- TOMBOL AKSI CEPAT PETUGAS -->
+            <!-- TOMBOL AKSI CEPAT PETUGAS (DIARAHKAN KE INDEX MODAL POPUP) -->
             <div class="d-flex gap-2 w-100 w-md-auto flex-column flex-sm-row">
-                <a href="{{ route('panen.create') }}" class="btn btn-light text-success fw-bold rounded-pill px-3 shadow-sm w-100 w-sm-auto text-nowrap">
+                <a href="{{ route('panen.index') }}?action=tambah" class="btn btn-light text-success fw-bold rounded-pill px-3 shadow-sm w-100 w-sm-auto text-nowrap">
                     <i class="bi bi-plus-circle-fill me-1"></i> Input Panen
                 </a>
-                <a href="{{ route('stok.keluar.create') }}" class="btn btn-warning text-dark fw-bold rounded-pill px-3 shadow-sm w-100 w-sm-auto text-nowrap">
+                <a href="{{ route('stok.index') }}?action=keluar" class="btn btn-warning text-dark fw-bold rounded-pill px-3 shadow-sm w-100 w-sm-auto text-nowrap">
                     <i class="bi bi-dash-circle-fill me-1"></i> Stok Keluar
                 </a>
             </div>

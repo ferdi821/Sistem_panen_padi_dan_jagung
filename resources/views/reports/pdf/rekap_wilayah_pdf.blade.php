@@ -16,6 +16,11 @@
         table.data-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
         table.data-table th, table.data-table td { border: 0.4px solid #333; padding: 2px 1px; text-align: center; word-wrap: break-word; overflow: hidden; }
         table.data-table th { background-color: #e8f5e9; font-size: 5pt; font-weight: bold; }
+        
+        /* Styling Garis Pembatas Tebal Khusus PDF Dompdf/MPDF */
+        .border-thick-bottom { border-bottom: 1.2pt solid #000 !important; }
+        .border-thick-right { border-right: 1.2pt solid #000 !important; }
+
         .text-start { text-align: left; }
         .fw-bold { font-weight: bold; }
         .bg-total { background-color: #eeeeee; }
@@ -31,7 +36,7 @@
                 <div class="sub-title">Periode: {{ $start->format('d M Y') }} s.d {{ $end->format('d M Y') }}</div>
             </td>
             <td style="width: 30%;" class="print-date">
-                Tanggal Cetak: <strong>{{ date('d-m-Y H:i') }} WIB</strong>
+                Tanggal Cetak: <strong>{{ \Carbon\Carbon::now()->setTimezone('Asia/Jakarta')->format('d-m-Y H:i') }} WIB</strong>
             </td>
         </tr>
     </table>
@@ -41,23 +46,24 @@
             <tr>
                 <th rowspan="3" style="width: 2%;">No</th>
                 <th rowspan="3" style="width: 9%;">Kabupaten / Kota</th>
-                <th colspan="4" style="width: 14%;">Target (Ton)</th>
-                <th rowspan="3" style="width: 4%;">Total</th>
-                <th rowspan="3" style="width: 4%;">Kontrol</th>
-                <th colspan="4" style="width: 14%;">Sudah Terdistribusi</th>
-                <th colspan="4" style="width: 14%;">Benih Tersedia</th>
-                <th colspan="4" style="width: 14%;">Benih (Prosesing)</th>
-                <th colspan="6" style="width: 25%;">Benih (Persiapan Panen)</th>
+                <th colspan="4" style="width: 14%;" class="border-thick-bottom border-thick-right">Target (Ton)</th>
+                <th rowspan="3" style="width: 4%;" class="border-thick-right">Total</th>
+                <th rowspan="3" style="width: 4%;" class="border-thick-right">Kontrol</th>
+                <th colspan="4" style="width: 14%;" class="border-thick-bottom">Sudah Terdistribusi</th>
+                <th colspan="4" style="width: 14%;" class="border-thick-bottom">Benih Tersedia</th>
+                <th colspan="4" style="width: 14%;" class="border-thick-bottom">Benih (Prosesing)</th>
+                <th colspan="6" style="width: 25%;" class="border-thick-bottom">Benih (Persiapan Panen)</th>
             </tr>
             <tr>
-                <th colspan="2">FS</th><th colspan="2">SS</th>
-                <th colspan="2">FS</th><th colspan="2">SS</th>
-                <th colspan="2">FS</th><th colspan="2">SS</th>
-                <th colspan="2">FS</th><th colspan="2">SS</th>
-                <th colspan="3">FS</th><th colspan="3">SS</th>
+                <th colspan="2" class="border-thick-bottom">FS</th>
+                <th colspan="2" class="border-thick-bottom border-thick-right">SS</th>
+                <th colspan="2" class="border-thick-bottom">FS</th><th colspan="2" class="border-thick-bottom">SS</th>
+                <th colspan="2" class="border-thick-bottom">FS</th><th colspan="2" class="border-thick-bottom">SS</th>
+                <th colspan="2" class="border-thick-bottom">FS</th><th colspan="2" class="border-thick-bottom">SS</th>
+                <th colspan="3" class="border-thick-bottom">FS</th><th colspan="3" class="border-thick-bottom">SS</th>
             </tr>
             <tr>
-                <th style="width: 3%;">Vol</th><th style="width: 4%;">Var</th><th style="width: 3%;">Vol</th><th style="width: 4%;">Var</th>
+                <th style="width: 3%;">Vol</th><th style="width: 4%;">Var</th><th style="width: 3%;">Vol</th><th style="width: 4%;" class="border-thick-right">Var</th>
                 <th style="width: 3%;">Vol</th><th style="width: 4%;">Var</th><th style="width: 3%;">Vol</th><th style="width: 4%;">Var</th>
                 <th style="width: 3%;">Vol</th><th style="width: 4%;">Var</th><th style="width: 3%;">Vol</th><th style="width: 4%;">Var</th>
                 <th style="width: 3%;">Vol</th><th style="width: 4%;">Var</th><th style="width: 3%;">Vol</th><th style="width: 4%;">Var</th>
@@ -77,11 +83,11 @@
                     <td>{{ number_format((float)$row['target_fs_vol'], 2) }}</td>
                     <td class="text-start">{{ $row['target_fs_var'] }}</td>
                     <td>{{ number_format((float)$row['target_ss_vol'], 2) }}</td>
-                    <td class="text-start">{{ $row['target_ss_var'] }}</td>
+                    <td class="text-start border-thick-right">{{ $row['target_ss_var'] }}</td>
 
                     @if($rIdx === 0)
-                        <td rowspan="{{ $kabData['rowspan'] }}" class="bg-total fw-bold">{{ number_format((float)$kabData['total'], 2) }}</td>
-                        <td rowspan="{{ $kabData['rowspan'] }}" class="bg-kontrol fw-bold">{{ number_format((float)$kabData['kontrol'], 2) }}</td>
+                        <td rowspan="{{ $kabData['rowspan'] }}" class="bg-total fw-bold border-thick-right">{{ number_format((float)$kabData['total'], 2) }}</td>
+                        <td rowspan="{{ $kabData['rowspan'] }}" class="bg-kontrol fw-bold border-thick-right">{{ number_format((float)$kabData['kontrol'], 2) }}</td>
                     @endif
 
                     <td>{{ number_format((float)$row['distribusi_fs_vol'], 2) }}</td>

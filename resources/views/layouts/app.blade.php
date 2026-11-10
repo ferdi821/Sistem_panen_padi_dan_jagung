@@ -32,7 +32,6 @@
     }
 
     if ($namaProvinsi) {
-        // Singkat kata (misal Jawa Barat -> JB)
         $words = explode(' ', trim($namaProvinsi));
         if (count($words) >= 2) {
             $namaProvinsiShort = strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
@@ -250,7 +249,6 @@
             width: calc(100% - var(--sidebar-collapsed-width));
         }
 
-        /* TOPBAR PRESI PADA RESOLUSI KECIL */
         .topbar {
             background: #ffffff;
             border-bottom: 1px solid #e9ecef;
@@ -274,7 +272,6 @@
             flex-shrink: 0;
         }
 
-        /* SWITCH NAMA LENGKAP VS SINGKAT DI MOBILE (< 400px) */
         .badge-full { display: inline-block; }
         .badge-short { display: none; }
 
@@ -357,8 +354,9 @@
                 <span class="nav-text">Dashboard</span>
             </a>
 
-            @hasrole('admin_pusat')
             <div class="sidebar-category">MASTER DATA</div>
+            
+            @hasrole('admin_pusat')
             <a href="{{ Route::has('users.index') ? route('users.index') : '#' }}" class="nav-item-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
                 <i class="bi bi-people"></i>
                 <span class="nav-text">Manajemen User</span>
@@ -367,11 +365,14 @@
                 <i class="bi bi-tags"></i>
                 <span class="nav-text">Varietas & Komoditas</span>
             </a>
+            @endhasrole
+
+            @hasanyrole('admin_pusat|petugas_provinsi')
             <a href="{{ Route::has('wilayah.index') ? route('wilayah.index') : '#' }}" class="nav-item-link {{ request()->routeIs('wilayah.*') ? 'active' : '' }}">
                 <i class="bi bi-geo-alt"></i>
                 <span class="nav-text">Wilayah & Gudang BPSIP</span>
             </a>
-            @endhasrole
+            @endhasanyrole
 
             <div class="sidebar-category">DATA & TRANSAKSI</div>
             <a href="{{ Route::has('panen.index') ? route('panen.index') : '#' }}" class="nav-item-link {{ request()->routeIs('panen.*') ? 'active' : '' }}">
@@ -382,7 +383,6 @@
                 <i class="bi bi-boxes"></i>
                 <span class="nav-text">Stok Benih Wilayah</span>
             </a>
-            <!-- Menu Stok Keluar / Distribusi sudah dihapus karena digabung modal popup di menu Stok Benih Wilayah -->
             <a href="{{ Route::has('stok.riwayat') ? route('stok.riwayat') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.riwayat') ? 'active' : '' }}">
                 <i class="bi bi-clock-history"></i>
                 <span class="nav-text">Riwayat Mutasi</span>

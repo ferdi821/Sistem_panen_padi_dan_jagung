@@ -33,11 +33,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/stok-benih', [StokBenihController::class, 'index'])->name('stok.index');
     Route::get('/stok-benih/riwayat', [StokBenihController::class, 'riwayatMutasi'])->name('stok.riwayat');
 
+    // Akses Manajemen Wilayah & Gudang BPSIP (Admin Pusat & Petugas Provinsi)
+    Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
+        Route::resource('wilayah', WilayahController::class)->except(['create', 'edit', 'show']);
+    });
+
     // Admin Pusat Management & Laporan Rekap Nasional
     Route::middleware(['role:admin_pusat'])->group(function () {
         Route::resource('users', UserController::class);
         Route::resource('benih', BenihController::class)->except(['show']);
-        Route::resource('wilayah', WilayahController::class)->except(['create', 'edit', 'show']);
         Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
         Route::get('/settings', [SystemSettingController::class, 'index'])->name('settings.index');
 

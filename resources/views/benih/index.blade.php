@@ -21,11 +21,11 @@
             <p class="text-muted small mb-0">Kelola data varietas, komoditas, kelas benih, dan batas minimum stok.</p>
         </div>
 
-        @hasrole('admin_pusat')
+        <div>
             <button type="button" class="btn btn-success shadow-sm px-3 py-2" data-bs-toggle="modal" data-bs-target="#modalTambahBenih" style="background-color: #106742; border: none; font-size: 13px; font-weight: 600;">
                 + Tambah Benih Baru
             </button>
-        @endhasrole
+        </div>
     </div>
 
     <!-- NOTIFIKASI BERHASIL -->
@@ -37,65 +37,127 @@
     @endif
 
     <!-- NOTIFIKASI ERROR -->
-    @if($errors->any())
+    @if(session('error') || $errors->any())
         <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
-            <ul class="mb-0">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
+            @if(session('error'))
+                {{ session('error') }}
+            @else
+                <ul class="mb-0">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            @endif
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
-    <!-- TABEL MASTER BENIH -->
+    <!-- TABEL BENIH -->
     <div class="card border-0 shadow-sm mb-3" style="border-radius: 12px; overflow: hidden;">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle text-center mb-0" style="font-size: 13px;">
                     <thead style="background-color: #f3f7f5; color: #315b49;">
                         <tr>
-                            <th class="text-start ps-4 py-3">Kode</th>
+                            <th class="py-3">Kode</th>
                             <th class="text-start py-3">Nama Benih</th>
                             <th class="py-3">Komoditas</th>
                             <th class="py-3">Varietas</th>
                             <th class="py-3">Kelas</th>
                             <th class="py-3">Stok Min (Ton)</th>
-                            @hasrole('admin_pusat')
-                                <th class="py-3">Aksi</th>
-                            @endhasrole
+                            <th class="py-3">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($benihs as $item)
-                        <tr>
-                            <td class="text-start ps-4"><code>{{ $item->kode_benih }}</code></td>
-                            <td class="text-start fw-bold" style="color: #273b32;">{{ $item->nama_benih }}</td>
-                            <td>
-                                @if(strtolower($item->komoditas) === 'padi')
-                                    <span class="badge px-2 py-1" style="background-color: #d9f2e3; color: #106742; font-size: 10px; font-weight: 700;">PADI</span>
-                                @else
-                                    <span class="badge px-2 py-1" style="background-color: #fff0c2; color: #956600; font-size: 10px; font-weight: 700;">JAGUNG</span>
-                                @endif
-                            </td>
-                            <td>{{ $item->varietas }}</td>
-                            <td><span class="badge bg-secondary" style="font-size: 10px;">{{ $item->kelas_benih }}</span></td>
-                            <td class="fw-bold">{{ number_format($item->stok_minimum, 2) }} Ton</td>
-                            @hasrole('admin_pusat')
-                            <td>
-                                <a href="{{ route('benih.edit', $item->id) }}" class="btn btn-sm btn-outline-warning px-2 py-1" style="font-size: 11px; font-weight: 600;">Edit</a>
-                                <form action="{{ route('benih.destroy', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus data benih ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn btn-sm btn-outline-danger px-2 py-1" style="font-size: 11px; font-weight: 600;" type="submit">Hapus</button>
-                                </form>
-                            </td>
-                            @endhasrole
-                        </tr>
+                        @forelse($benihs as $benih)
+                            <tr>
+                                <td><code>{{ $benih->kode_benih }}</code></td>
+                                <td class="text-start fw-bold" style="color: #273b32;">{{ $benih->nama_benih }}</td>
+                                <td>
+                                    @if(strtolower($benih->komoditas) === 'padi')
+                                        <span class="badge px-2 py-1" style="background-color: #d9f2e3; color: #106742; font-size: 10px; font-weight: 700;">PADI</span>
+                                    @else
+                                        <span class="badge px-2 py-1" style="background-color: #fff0c2; color: #956600; font-size: 10px; font-weight: 700;">JAGUNG</span>
+                                    @endif
+                                </td>
+                                <td>{{ $benih->varietas }}</td>
+                                <td><span class="badge bg-secondary px-2 py-1" style="font-size: 10px;">{{ strtoupper($benih->kelas_benih) }}</span></td>
+                                <td class="fw-bold text-dark">{{ number_format($benih->stok_min_ton, 2) }} Ton</td>
+                                <td>
+                                    <!-- BUTTON EDIT MODAL POPUP -->
+                                    <button type="button" class="btn btn-sm btn-outline-warning px-2 py-1 me-1" data-bs-toggle="modal" data-bs-target="#modalEditBenih{{ $benih->id }}" style="font-size: 11px; font-weight: 600;">
+                                        Edit
+                                    </button>
+
+                                    <form action="{{ route('benih.destroy', $benih->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus benih ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1" style="font-size: 11px; font-weight: 600;">Hapus</button>
+                                    </form>
+                                </td>
+                            </tr>
+
+                            <!-- MODAL EDIT BENIH -->
+                            <div class="modal fade" id="modalEditBenih{{ $benih->id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow" style="border-radius: 12px; overflow: hidden;">
+                                        <div class="modal-header text-white px-4 py-3" style="background-color: #e67e22;">
+                                            <h5 class="modal-title fw-bold fs-6">Edit Data Benih</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form action="{{ route('benih.update', $benih->id) }}" method="POST">
+                                            @csrf
+                                            @method('PUT')
+                                            <div class="modal-body p-4 text-start">
+                                                
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold small" style="color: #34483e;">Kode Benih</label>
+                                                    <input type="text" name="kode_benih" class="form-control form-control-sm" value="{{ $benih->kode_benih }}" required>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold small" style="color: #34483e;">Nama Benih</label>
+                                                    <input type="text" name="nama_benih" class="form-control form-control-sm" value="{{ $benih->nama_benih }}" required>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold small" style="color: #34483e;">Komoditas</label>
+                                                        <select name="komoditas" class="form-select form-select-sm" required>
+                                                            <option value="padi" {{ strtolower($benih->komoditas) == 'padi' ? 'selected' : '' }}>Padi</option>
+                                                            <option value="jagung" {{ strtolower($benih->komoditas) == 'jagung' ? 'selected' : '' }}>Jagung</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold small" style="color: #34483e;">Varietas</label>
+                                                        <input type="text" name="varietas" class="form-control form-control-sm" value="{{ $benih->varietas }}" required>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold small" style="color: #34483e;">Kelas Benih</label>
+                                                        <input type="text" name="kelas_benih" class="form-control form-control-sm" value="{{ $benih->kelas_benih }}" placeholder="Contoh: BP / BR / BS" required>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label class="form-label fw-bold small" style="color: #34483e;">Stok Min (Ton)</label>
+                                                        <input type="number" step="0.01" name="stok_min_ton" class="form-control form-control-sm" value="{{ $benih->stok_min_ton }}" required>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                            <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                                                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
+                                                <button type="submit" class="btn btn-warning btn-sm px-4 fw-bold text-white" style="background-color: #e67e22; border: none;">Simpan Perubahan</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                         @empty
-                        <tr>
-                            <td colspan="7" class="py-4 text-muted">Belum ada master data benih.</td>
-                        </tr>
+                            <tr>
+                                <td colspan="7" class="py-4 text-muted">Belum ada data master benih.</td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -103,102 +165,67 @@
         </div>
     </div>
 
-    <!-- CUSTOM PAGINATION RAPI (SATU BARIS) -->
+    <!-- PAGINATION -->
     @if ($benihs->hasPages())
         <div class="d-flex justify-content-center mt-3 mb-4">
-            <nav>
-                <ul class="pagination pagination-sm mb-0">
-                    @if ($benihs->onFirstPage())
-                        <li class="page-item disabled"><span class="page-link">&laquo; Previous</span></li>
-                    @else
-                        <li class="page-item"><a class="page-link" href="{{ $benihs->previousPageUrl() }}" style="color: #106742;">&laquo; Previous</a></li>
-                    @endif
-
-                    @foreach ($benihs->getUrlRange(1, $benihs->lastPage()) as $page => $url)
-                        @if ($page == $benihs->currentPage())
-                            <li class="page-item active" aria-current="page"><span class="page-link" style="background-color: #106742; border-color: #106742; color: #fff;">{{ $page }}</span></li>
-                        @else
-                            <li class="page-item"><a class="page-link" href="{{ $url }}" style="color: #106742;">{{ $page }}</a></li>
-                        @endif
-                    @endforeach
-
-                    @if ($benihs->hasMorePages())
-                        <li class="page-item"><a class="page-link" href="{{ $benihs->nextPageUrl() }}" style="color: #106742;">Next &raquo;</a></li>
-                    @else
-                        <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
-                    @endif
-                </ul>
-            </nav>
+            {{ $benihs->links() }}
         </div>
     @endif
 
 </div>
 
-<!-- =====================================
-     MODAL TAMBAH MASTER BENIH BARU
-===================================== -->
+<!-- MODAL TAMBAH BENIH BARU -->
 <div class="modal fade" id="modalTambahBenih" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow" style="border-radius: 12px; overflow: hidden;">
             <div class="modal-header text-white px-4 py-3" style="background-color: #106742;">
-                <h5 class="modal-title fw-bold fs-6">Tambah Master Benih Baru</h5>
+                <h5 class="modal-title fw-bold fs-6">Tambah Benih Baru</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{{ route('benih.store') }}" method="POST">
                 @csrf
                 <div class="modal-body p-4 text-start">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold small" style="color: #34483e;">Kode Benih</label>
-                            <input type="text" name="kode_benih" class="form-control form-control-sm" placeholder="Contoh: 002" value="{{ old('kode_benih') }}" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold small" style="color: #34483e;">Nama Benih</label>
-                            <input type="text" name="nama_benih" class="form-control form-control-sm" placeholder="Contoh: benih jagung hibrida" value="{{ old('nama_benih') }}" required>
-                        </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small" style="color: #34483e;">Kode Benih</label>
+                        <input type="text" name="kode_benih" class="form-control form-control-sm" placeholder="Contoh: bnh-pdi-003" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small" style="color: #34483e;">Nama Benih</label>
+                        <input type="text" name="nama_benih" class="form-control form-control-sm" placeholder="Contoh: Benih Padi Ciherang" required>
                     </div>
 
                     <div class="row">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold small" style="color: #34483e;">Komoditas</label>
                             <select name="komoditas" class="form-select form-select-sm" required>
+                                <option value="">-- Pilih Komoditas --</option>
                                 <option value="padi">Padi</option>
                                 <option value="jagung">Jagung</option>
                             </select>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold small" style="color: #34483e;">Varietas</label>
-                            <input type="text" name="varietas" class="form-control form-control-sm" placeholder="Contoh: Ciherang / Bisi 18" value="{{ old('varietas') }}" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label fw-bold small" style="color: #34483e;">Kelas Benih</label>
-                            <select name="kelas_benih" class="form-select form-select-sm" required>
-                                <option value="BR">BR (Benih Sebar)</option>
-                                <option value="BP">BP (Benih Pokok)</option>
-                                <option value="BD">BD (Benih Dasar)</option>
-                            </select>
+                            <input type="text" name="varietas" class="form-control form-control-sm" placeholder="Contoh: Ciherang / Bisi" required>
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold small" style="color: #34483e;">Satuan</label>
-                            <input type="text" name="satuan" class="form-control form-control-sm bg-light" value="Ton" readonly>
+                            <label class="form-label fw-bold small" style="color: #34483e;">Kelas Benih</label>
+                            <input type="text" name="kelas_benih" class="form-control form-control-sm" placeholder="Contoh: BP / BR / BS" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold small" style="color: #34483e;">Stok Minimum Peringatan (Ton)</label>
-                            <input type="number" step="0.01" name="stok_minimum" class="form-control form-control-sm" placeholder="Contoh: 0.10" value="{{ old('stok_minimum', '0.10') }}" required>
+                            <label class="form-label fw-bold small" style="color: #34483e;">Stok Min (Ton)</label>
+                            <input type="number" step="0.01" name="stok_min_ton" class="form-control form-control-sm" placeholder="Contoh: 100.00" required>
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label small" style="color: #34483e;">Deskripsi / Spesifikasi (Opsional)</label>
-                        <textarea name="deskripsi" class="form-control form-control-sm" rows="2" placeholder="Keterangan spesifikasi benih...">{{ old('deskripsi') }}</textarea>
-                    </div>
                 </div>
                 <div class="modal-footer border-0 pt-0 px-4 pb-4">
                     <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-success btn-sm px-4 fw-bold" style="background-color: #106742; border: none;">Simpan Master Benih</button>
+                    <button type="submit" class="btn btn-success btn-sm px-4 fw-bold" style="background-color: #106742; border: none;">Simpan Benih</button>
                 </div>
             </form>
         </div>
