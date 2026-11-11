@@ -238,7 +238,7 @@
         #main-wrapper {
             margin-left: var(--sidebar-width);
             transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            min-height: auto;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             width: calc(100% - var(--sidebar-width));
@@ -361,13 +361,13 @@
                 <i class="bi bi-people"></i>
                 <span class="nav-text">Manajemen User</span>
             </a>
+            @endhasrole
+
+            @hasanyrole('admin_pusat|petugas_provinsi')
             <a href="{{ Route::has('benih.index') ? route('benih.index') : '#' }}" class="nav-item-link {{ request()->routeIs('benih.*') ? 'active' : '' }}">
                 <i class="bi bi-tags"></i>
                 <span class="nav-text">Varietas & Komoditas</span>
             </a>
-            @endhasrole
-
-            @hasanyrole('admin_pusat|petugas_provinsi')
             <a href="{{ Route::has('wilayah.index') ? route('wilayah.index') : '#' }}" class="nav-item-link {{ request()->routeIs('wilayah.*') ? 'active' : '' }}">
                 <i class="bi bi-geo-alt"></i>
                 <span class="nav-text">Wilayah & Gudang BPSIP</span>
@@ -475,9 +475,18 @@
             </div>
         </header>
 
-        <main class="p-2 p-md-4">
+        <main class="p-2 p-md-4 flex-grow-1">
             @yield('content')
         </main>
+
+        <!-- FOOTER GLOBAL SISTEM -->
+        <footer class="mt-auto py-3 bg-white border-top text-center" style="box-shadow: 0 -2px 10px rgba(0,0,0,0.02);">
+            <div class="container-fluid px-4">
+                <p class="mb-0 text-muted small fw-semibold" style="font-size: 12px; color: #6c757d;">
+                    Sistem Informasi Pertanian & Stok Benih Padi dan Jagung (SIPANEN) &copy; {{ date('Y') }} PT Cipta Teknologi Cendekia. All Rights Reserved.
+                </p>
+            </div>
+        </footer>
     </div>
 
     <!-- Bootstrap 5 JS -->
@@ -518,5 +527,6 @@
             }
         });
     </script>
+    @stack('scripts')
 </body>
 </html>

@@ -14,10 +14,13 @@
                     Monitoring hasil produksi panen padi, jagung, serta persediaan stok benih wilayah {{ $namaProvinsi ?? '' }} secara real-time.
                 </p>
             </div>
-            <!-- TOMBOL AKSI CEPAT PETUGAS (DIARAHKAN KE INDEX MODAL POPUP) -->
+            <!-- TOMBOL AKSI CEPAT PETUGAS -->
             <div class="d-flex gap-2 w-100 w-md-auto flex-column flex-sm-row">
                 <a href="{{ route('panen.index') }}?action=tambah" class="btn btn-light text-success fw-bold rounded-pill px-3 shadow-sm w-100 w-sm-auto text-nowrap">
                     <i class="bi bi-plus-circle-fill me-1"></i> Input Panen
+                </a>
+                <a href="{{ route('stok.index') }}?action=masuk" class="btn btn-emerald text-white fw-bold rounded-pill px-3 shadow-sm w-100 w-sm-auto text-nowrap" style="background-color: #2e7d32; border: none;">
+                    <i class="bi bi-plus-lg me-1"></i> Stok Masuk
                 </a>
                 <a href="{{ route('stok.index') }}?action=keluar" class="btn btn-warning text-dark fw-bold rounded-pill px-3 shadow-sm w-100 w-sm-auto text-nowrap">
                     <i class="bi bi-dash-circle-fill me-1"></i> Stok Keluar
@@ -81,8 +84,11 @@
                         </div>
                     </div>
                     <h3 class="fw-bold mb-0 fs-3">
-                        {{ number_format($totalStokKg ?? 0, 2) }} 
-                        <span class="fs-6 fw-normal text-white-50">Kg</span>
+                        @php 
+                            $stokDalamTon = isset($totalStokKg) ? ($totalStokKg > 100 ? $totalStokKg / 1000 : $totalStokKg) : 0;
+                        @endphp
+                        {{ number_format($stokDalamTon, 2) }} 
+                        <span class="fs-6 fw-normal text-white-50">Ton</span>
                     </h3>
                 </div>
             </div>
@@ -118,7 +124,7 @@
                             Aktivitas Input Data Terbaru
                         </h6>
                     </div>
-                    <a href="{{ route('panen.index') }}" class="btn btn-sm btn-outline-success rounded-pill text-nowrap flex-shrink-0" style="font-size: 0.65rem; padding: 2px 8px; line-height: 1.2;">
+                    <a href="{{ route('stok.riwayat') }}" class="btn btn-sm btn-outline-success rounded-pill text-nowrap flex-shrink-0" style="font-size: 0.65rem; padding: 2px 8px; line-height: 1.2;">
                         Lihat Semua
                     </a>
                 </div>
@@ -139,51 +145,40 @@
                                 @forelse($riwayatTerbaru ?? [] as $item)
                                 <tr>
                                     <td class="ps-3 fw-semibold text-nowrap py-2">
-                                        {{ \Carbon\Carbon::parse($item->tanggal ?? $item->created_at)->format('d/m/Y') }}
+                                        {{ \Carbon\Carbon::parse($item->tanggal_transaksi ?? $item->created_at)->format('d/m/Y') }}
                                     </td>
                                     <td class="text-nowrap py-2">
-                                        <span class="badge bg-{{ strtolower($item->komoditas ?? '') === 'padi' ? 'success' : 'warning text-dark' }} px-2 py-1" style="font-size: 0.65rem;">
-                                            {{ strtoupper($item->komoditas ?? 'PADI') }}
+                                        @php
+                                            $komoditasName = $item->stokBenih->benih->komoditas ?? 'PADI';
+                                        @endphp
+                                        <span class="badge bg-{{ strtolower($komoditasName) === 'padi' ? 'success' : 'warning text-dark' }} px-2 py-1" style="font-size: 0.65rem;">
+                                            {{ strtoupper($komoditasName) }}
                                         </span>
                                     </td>
-                                    <td class="text-nowrap py-2">{{ $item->wilayah->nama_wilayah ?? $item->kabupaten ?? 'Manggungharja' }}</td>
+                                    <td class="text-nowrap py-2">{{ $item->sumber_tujuan ?? '-' }}</td>
                                     <td class="text-end fw-bold text-nowrap py-2">
-                                        {{ number_format($item->jumlah ?? $item->jumlah_panen_ton ?? 0, 2) }} Ton
+                                        @php
+                                            $valKg = $item->jumlah_kg ?? 0;
+                                            $valTon = $valKg >= 100 ? $valKg / 1000 : $valKg;
+                                        @endphp
+                                        {{ number_format($valTon, 2) }} Ton
                                     </td>
                                     <td class="text-center text-nowrap py-2">
-                                        @if(($item->jenis_mutasi ?? 'masuk') === 'masuk')
-                                            <span class="text-success fw-bold"><i class="bi bi-arrow-down-left-circle me-1"></i>+{{ number_format($item->stok_kg ?? 500, 0) }} Kg</span>
+                                        @if(($item->jenis_transaksi ?? 'masuk') === 'masuk')
+                                            <span class="text-success fw-bold"><i class="bi bi-arrow-down-left-circle me-1"></i>+{{ number_format($valTon, 2) }} Ton</span>
                                         @else
-                                            <span class="text-danger fw-bold"><i class="bi bi-arrow-up-right-circle me-1"></i>-{{ number_format($item->stok_kg ?? 200, 0) }} Kg</span>
+                                            <span class="text-danger fw-bold"><i class="bi bi-arrow-up-right-circle me-1"></i>-{{ number_format($valTon, 2) }} Ton</span>
                                         @endif
                                     </td>
                                     <td class="text-center pe-3 text-nowrap py-2">
-                                        @php $status = strtolower($item->status_validasi ?? 'disetujui'); @endphp
-                                        @if($status === 'disetujui')
-                                            <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-1" style="font-size: 0.65rem;">Disetujui</span>
-                                        @elseif($status === 'pending')
-                                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill px-2 py-1" style="font-size: 0.65rem;">Pending</span>
-                                        @else
-                                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2 py-1" style="font-size: 0.65rem;">Ditolak</span>
-                                        @endif
+                                        <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-1" style="font-size: 0.65rem;">Disetujui</span>
                                     </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td class="ps-3 fw-semibold text-nowrap py-2">08/11/2026</td>
-                                    <td class="text-nowrap py-2"><span class="badge bg-success px-2 py-1" style="font-size: 0.65rem;">PADI</span></td>
-                                    <td class="text-nowrap py-2">Manggungharja</td>
-                                    <td class="text-end fw-bold text-nowrap py-2">15.50 Ton</td>
-                                    <td class="text-center text-nowrap py-2"><span class="text-success fw-bold"><i class="bi bi-arrow-down-left-circle me-1"></i>+1,200 Kg</span></td>
-                                    <td class="text-center pe-3 text-nowrap py-2"><span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2 py-1" style="font-size: 0.65rem;">Disetujui</span></td>
-                                </tr>
-                                <tr>
-                                    <td class="ps-3 fw-semibold text-nowrap py-2">06/11/2026</td>
-                                    <td class="text-nowrap py-2"><span class="badge bg-warning text-dark px-2 py-1" style="font-size: 0.65rem;">JAGUNG</span></td>
-                                    <td class="text-nowrap py-2">Ciparay</td>
-                                    <td class="text-end fw-bold text-nowrap py-2">8.20 Ton</td>
-                                    <td class="text-center text-nowrap py-2"><span class="text-danger fw-bold"><i class="bi bi-arrow-up-right-circle me-1"></i>-500 Kg</span></td>
-                                    <td class="text-center pe-3 text-nowrap py-2"><span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill px-2 py-1" style="font-size: 0.65rem;">Pending</span></td>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        Belum ada aktivitas input data terbaru di wilayah ini.
+                                    </td>
                                 </tr>
                                 @endforelse
                             </tbody>

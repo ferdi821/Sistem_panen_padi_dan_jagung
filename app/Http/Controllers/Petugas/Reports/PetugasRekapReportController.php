@@ -69,8 +69,9 @@ class PetugasRekapReportController extends Controller
 
         $wilayahs = $query->get();
 
+        // JIKA KOSONG: Jangan pakai dummy fiktif "Manggungharja", kembalikan array kosong agar tabel menampilkan pesan "Belum ada data"
         if ($wilayahs->isEmpty()) {
-            $wilayahs = collect([(object)['kabupaten' => $namaProvinsi, 'nama_kabupaten' => $namaProvinsi]]);
+            return [];
         }
 
         $rekapData = [];

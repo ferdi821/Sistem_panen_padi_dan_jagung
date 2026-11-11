@@ -15,26 +15,11 @@ class StokBenihController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('petugas_provinsi') && $user->provinsi_id) {
-            $allBenih = Benih::all();
-            foreach ($allBenih as $benih) {
-                StokBenih::firstOrCreate(
-                    [
-                        'provinsi_id' => $user->provinsi_id,
-                        'benih_id'    => $benih->id,
-                    ],
-                    [
-                        'jumlah_stok_kg' => 0.00
-                    ]
-                );
-            }
-        }
-
         $query = StokBenih::with(['provinsi', 'benih']);
         if ($user->hasRole('petugas_provinsi')) {
             $query->where('provinsi_id', $user->provinsi_id);
         }
-        $stokList = $query->latest()->paginate(5);
+        $stokList = $query->latest()->paginate(10);
 
         $stokQuery = StokBenih::with(['provinsi', 'benih']);
         if ($user->hasRole('petugas_provinsi')) {
@@ -43,7 +28,15 @@ class StokBenihController extends Controller
         $stokOptions = $stokQuery->get();
 
         $provinsis = Provinsi::all();
-        $benihs    = Benih::all();
+
+        $benihQuery = Benih::query();
+        if ($user->hasRole('petugas_provinsi')) {
+            $benihQuery->where(function($q) use ($user) {
+                $q->where('provinsi_id', $user->provinsi_id)
+                  ->orWhereNull('provinsi_id');
+            });
+        }
+        $benihs = $benihQuery->get();
 
         return view('stok.index', compact('stokList', 'stokOptions', 'provinsis', 'benihs'));
     }
@@ -63,7 +56,7 @@ class StokBenihController extends Controller
         $user = auth()->user();
 
         if ($user->hasRole('petugas_provinsi') && $stok->provinsi_id != $user->provinsi_id) {
-            return back()->with('error', 'Akses ditolak! Anda hanya berhak mengedit data stok wilayah provinsi Anda.');
+            return back()->with('error', 'Akses ditolak!');
         }
 
         $validated = $request->validate([
@@ -87,7 +80,7 @@ class StokBenihController extends Controller
 
         $adaTransaksi = TransaksiStokBenih::where('stok_benih_id', $id)->exists();
         if ($adaTransaksi) {
-            return back()->with('error', 'Gagal menghapus! Data stok ini sudah memiliki riwayat transaksi mutasi.');
+            return back()->with('error', 'Gagal menghapus! Stok ini sudah memiliki riwayat transaksi.');
         }
 
         $stok->delete();
@@ -95,6 +88,58 @@ class StokBenihController extends Controller
         return redirect()->route('stok.index')->with('success', 'Data persediaan stok benih berhasil dihapus!');
     }
 
+    // TRANSAKSI STOK MASUK
+    public function storeMasuk(Request $request)
+    {
+        $user = auth()->user();
+        
+        $validated = $request->validate([
+            'benih_id'          => 'required|exists:benihs,id',
+            'sumber_tujuan'     => 'required|string|max:150',
+            'jumlah_kg'         => 'required|numeric|min:0.01',
+            'tanggal_transaksi' => 'required|date',
+            'keterangan'        => 'nullable|string',
+        ]);
+
+        return DB::transaction(function () use ($validated, $user) {
+            $provinsiId = $user->provinsi_id;
+
+            // Cari atau buatkan stok benih untuk provinsi ini
+            $stok = StokBenih::firstOrCreate(
+                [
+                    'provinsi_id' => $provinsiId,
+                    'benih_id'    => $validated['benih_id'],
+                ],
+                [
+                    'jumlah_stok_kg' => 0.00
+                ]
+            );
+
+            $stokSebelum = $stok->jumlah_stok_kg;
+            $stokSesudah = $stokSebelum + $validated['jumlah_kg'];
+
+            // Update nilai fisik stok
+            $stok->update(['jumlah_stok_kg' => $stokSesudah]);
+
+            // Catat transaksi mutasi
+            TransaksiStokBenih::create([
+                'stok_benih_id'     => $stok->id,
+                'pengujian_mutu_id' => null,
+                'user_id'           => $user->id,
+                'jenis_transaksi'   => 'masuk',
+                'sumber_tujuan'     => $validated['sumber_tujuan'],
+                'jumlah_kg'         => $validated['jumlah_kg'],
+                'stok_sebelum'      => $stokSebelum,
+                'stok_sesudah'      => $stokSesudah,
+                'tanggal_transaksi' => $validated['tanggal_transaksi'],
+                'keterangan'        => $validated['keterangan'],
+            ]);
+
+            return redirect()->route('stok.index')->with('success', 'Stok masuk sebanyak ' . number_format($validated['jumlah_kg'], 2) . ' Ton berhasil diproses!');
+        });
+    }
+
+    // TRANSAKSI STOK KELUAR
     public function storeKeluar(Request $request)
     {
         $validated = $request->validate([
@@ -130,42 +175,7 @@ class StokBenihController extends Controller
                 'keterangan'        => $validated['keterangan'],
             ]);
 
-            return redirect()->route('stok.index')->with('success', 'Transaksi stok keluar berhasil diproses!');
-        });
-    }
-
-    public function storeMasuk(Request $request)
-    {
-        $validated = $request->validate([
-            'stok_benih_id'     => 'required|exists:stok_benihs,id',
-            'sumber_tujuan'     => 'required|string|max:150',
-            'jumlah_kg'         => 'required|numeric|min:0.01',
-            'tanggal_transaksi' => 'required|date',
-            'keterangan'        => 'nullable|string',
-        ]);
-
-        return DB::transaction(function () use ($validated) {
-            $stok = StokBenih::lockForUpdate()->findOrFail($validated['stok_benih_id']);
-
-            $stokSebelum = $stok->jumlah_stok_kg;
-            $stokSesudah = $stokSebelum + $validated['jumlah_kg'];
-
-            $stok->update(['jumlah_stok_kg' => $stokSesudah]);
-
-            TransaksiStokBenih::create([
-                'stok_benih_id'     => $stok->id,
-                'pengujian_mutu_id' => null,
-                'user_id'           => auth()->id(),
-                'jenis_transaksi'   => 'masuk',
-                'sumber_tujuan'     => $validated['sumber_tujuan'],
-                'jumlah_kg'         => $validated['jumlah_kg'],
-                'stok_sebelum'      => $stokSebelum,
-                'stok_sesudah'      => $stokSesudah,
-                'tanggal_transaksi' => $validated['tanggal_transaksi'],
-                'keterangan'        => $validated['keterangan'],
-            ]);
-
-            return redirect()->route('stok.index')->with('success', 'Transaksi stok masuk berhasil diproses dan stok bertambah!');
+            return redirect()->route('stok.index')->with('success', 'Stok keluar sebanyak ' . number_format($validated['jumlah_kg'], 2) . ' Ton berhasil diproses!');
         });
     }
 

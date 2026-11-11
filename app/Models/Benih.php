@@ -9,15 +9,18 @@ class Benih extends Model
 {
     use HasFactory;
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'provinsi_id',
+        'kode_benih',
+        'nama_benih',
+        'komoditas',
+        'varietas',
+        'kelas_benih',
+        'stok_minimum',
+    ];
 
-    public function pengujianMutus()
+    public function provinsi()
     {
-        return $this->hasMany(PengujianMutuBenih::class, 'benih_id');
-    }
-
-    public function stokBenihs()
-    {
-        return $this->hasMany(StokBenih::class, 'benih_id');
+        return $this->belongsTo(Provinsi::class, 'provinsi_id');
     }
 }

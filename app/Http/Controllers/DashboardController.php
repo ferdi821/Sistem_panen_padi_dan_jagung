@@ -62,8 +62,42 @@ class DashboardController extends Controller
         $stokMasukKg = (clone $queryTransaksi)->where('jenis_transaksi', 'masuk')->sum('jumlah_kg');
         $stokKeluarKg = (clone $queryTransaksi)->where('jenis_transaksi', 'keluar')->sum('jumlah_kg');
 
-        // 5 Aktivitas Panen Terbaru
+        // 5 Aktivitas Terbaru
+        $riwayatTerbaru = (clone $queryTransaksi)->with(['stokBenih.benih', 'stokBenih.provinsi', 'user'])->latest()->take(5)->get();
         $panenTerbaru = (clone $queryPanen)->with('provinsi')->latest()->take(5)->get();
+
+        // -------------------------------------------------------------
+        // PENGELOMPOKAN DATA GRAFIK TREN PRODUKSI NASIONAL DINAMIS
+        // -------------------------------------------------------------
+        $tahunIni = date('Y');
+        $trenPadi = array_fill(1, 12, 0);
+        $trenJagung = array_fill(1, 12, 0);
+
+        $dataBulanan = (clone $queryPanen)
+            ->select(
+                DB::raw('MONTH(COALESCE(tanggal_panen, created_at)) as bulan'),
+                DB::raw('LOWER(komoditas) as komoditas'),
+                DB::raw('SUM(jumlah_panen_ton) as total')
+            )
+            ->whereYear(DB::raw('COALESCE(tanggal_panen, created_at)'), $tahunIni)
+            ->groupBy('bulan', 'komoditas')
+            ->get();
+
+        foreach ($dataBulanan as $item) {
+            if ($item->komoditas === 'padi') {
+                $trenPadi[$item->bulan] = (float) $item->total;
+            } elseif ($item->komoditas === 'jagung') {
+                $trenJagung[$item->bulan] = (float) $item->total;
+            }
+        }
+
+        // Batasi grafik hanya sampai bulan aktif saat ini
+        $bulanAktif = (int) date('n'); 
+        $labelsBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        
+        $labelsFinal = array_slice($labelsBulan, 0, $bulanAktif);
+        $dataPadiFinal = array_slice(array_values($trenPadi), 0, $bulanAktif);
+        $dataJagungFinal = array_slice(array_values($trenJagung), 0, $bulanAktif);
 
         // -------------------------------------------------------------
         // PEMISAHAN VIEW BERDASARKAN ROLE USER
@@ -79,7 +113,11 @@ class DashboardController extends Controller
                 'totalVarietas',
                 'stokMasukKg',
                 'stokKeluarKg',
-                'panenTerbaru'
+                'panenTerbaru',
+                'riwayatTerbaru',
+                'labelsFinal',
+                'dataPadiFinal',
+                'dataJagungFinal'
             ));
         }
 
@@ -91,7 +129,11 @@ class DashboardController extends Controller
             'totalVarietas',
             'stokMasukKg',
             'stokKeluarKg',
-            'panenTerbaru'
+            'panenTerbaru',
+            'riwayatTerbaru',
+            'labelsFinal',
+            'dataPadiFinal',
+            'dataJagungFinal'
         ));
     }
 }

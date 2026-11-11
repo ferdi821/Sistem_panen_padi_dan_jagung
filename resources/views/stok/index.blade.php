@@ -125,11 +125,9 @@
                                             @method('PUT')
                                             <div class="modal-body p-4 text-start">
                                                 
-                                                <!-- PROVINSI KONDISIONAL ROLE -->
                                                 <div class="mb-3">
                                                     <label class="form-label fw-bold small" style="color: #34483e;">Provinsi</label>
                                                     @if(auth()->user()->hasRole('admin_pusat'))
-                                                        <!-- Admin Pusat Bebas Pilih -->
                                                         <select name="provinsi_id" class="form-select form-select-sm" required>
                                                             @foreach($provinsis as $prov)
                                                                 <option value="{{ $prov->id }}" {{ $stok->provinsi_id == $prov->id ? 'selected' : '' }}>
@@ -138,7 +136,6 @@
                                                             @endforeach
                                                         </select>
                                                     @else
-                                                        <!-- Petugas Provinsi Dikunci (Readonly) -->
                                                         <input type="text" class="form-control form-control-sm bg-light" value="{{ $stok->provinsi->nama_provinsi ?? '-' }}" readonly>
                                                         <input type="hidden" name="provinsi_id" value="{{ $stok->provinsi_id }}">
                                                     @endif
@@ -180,32 +177,10 @@
         </div>
     </div>
 
-    <!-- CUSTOM PAGINATION RAPI -->
+    <!-- CUSTOM PAGINATION -->
     @if ($stokList->hasPages())
         <div class="d-flex justify-content-center mt-3 mb-4">
-            <nav>
-                <ul class="pagination pagination-sm mb-0">
-                    @if ($stokList->onFirstPage())
-                        <li class="page-item disabled"><span class="page-link">&laquo; Previous</span></li>
-                    @else
-                        <li class="page-item"><a class="page-link" href="{{ $stokList->previousPageUrl() }}" style="color: #106742;">&laquo; Previous</a></li>
-                    @endif
-
-                    @foreach ($stokList->getUrlRange(1, $stokList->lastPage()) as $page => $url)
-                        @if ($page == $stokList->currentPage())
-                            <li class="page-item active" aria-current="page"><span class="page-link" style="background-color: #106742; border-color: #106742; color: #fff;">{{ $page }}</span></li>
-                        @else
-                            <li class="page-item"><a class="page-link" href="{{ $url }}" style="color: #106742;">{{ $page }}</a></li>
-                        @endif
-                    @endforeach
-
-                    @if ($stokList->hasMorePages())
-                        <li class="page-item"><a class="page-link" href="{{ $stokList->nextPageUrl() }}" style="color: #106742;">Next &raquo;</a></li>
-                    @else
-                        <li class="page-item disabled"><span class="page-link">Next &raquo;</span></li>
-                    @endif
-                </ul>
-            </nav>
+            {{ $stokList->links() }}
         </div>
     @endif
 
@@ -222,27 +197,29 @@
             <form action="{{ route('stok.masuk.store') }}" method="POST">
                 @csrf
                 <div class="modal-body p-4 text-start">
+                    
+                    <!-- PERBAIKAN: PILIH BENIH DIRECT MENGGUNAKAN benih_id ATAU STOK ID -->
                     <div class="mb-3">
-                        <label class="form-label fw-bold small" style="color: #34483e;">Pilih Stok Benih Wilayah</label>
-                        <select name="stok_benih_id" class="form-select form-select-sm" required>
-                            <option value="">-- Pilih Stok Tersedia --</option>
-                            @foreach($stokOptions as $s)
-                                <option value="{{ $s->id }}">
-                                    {{ $s->provinsi->nama_provinsi ?? '-' }} - {{ $s->benih->nama_benih ?? '-' }} (Stok Saat Ini: {{ number_format($s->jumlah_stok_kg, 2) }} Ton)
+                        <label class="form-label fw-bold small" style="color: #34483e;">Pilih Varietas Benih</label>
+                        <select name="benih_id" class="form-select form-select-sm" required>
+                            <option value="">-- Pilih Varietas Benih --</option>
+                            @foreach($benihs as $b)
+                                <option value="{{ $b->id }}">
+                                    [{{ $b->kode_benih }}] {{ $b->nama_benih }} - {{ $b->varietas }} ({{ strtoupper($b->komoditas) }})
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold small" style="color: #34483e;">Wilayah / Daerah Spesifik (Kecamatan / Kabupaten)</label>
-                        <input type="text" name="sumber_tujuan" class="form-control form-control-sm" placeholder="Contoh: Ciparay / Majalaya / Kota Jambi" required>
+                        <label class="form-label fw-bold small" style="color: #34483e;">Wilayah / Sumber Transaksi</label>
+                        <input type="text" name="sumber_tujuan" class="form-control form-control-sm" placeholder="Contoh: Hasil Panen Poktan Jaya / BPSIP Jawa Barat" required>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold small" style="color: #34483e;">Jumlah Ditambahkan (Ton)</label>
-                            <input type="number" step="0.01" name="jumlah_kg" class="form-control form-control-sm" placeholder="Contoh: 10.00" required>
+                            <input type="number" step="0.01" name="jumlah_kg" class="form-control form-control-sm" placeholder="Contoh: 1.00" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold small" style="color: #34483e;">Tanggal Transaksi</label>
@@ -295,7 +272,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold small" style="color: #34483e;">Jumlah Dikeluarkan (Ton)</label>
-                            <input type="number" step="0.01" name="jumlah_kg" class="form-control form-control-sm" placeholder="Contoh: 1.50" required>
+                            <input type="number" step="0.01" name="jumlah_kg" class="form-control form-control-sm" placeholder="Contoh: 0.50" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold small" style="color: #34483e;">Tanggal Transaksi</label>

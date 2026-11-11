@@ -42,7 +42,7 @@
             @if(session('error'))
                 {{ session('error') }}
             @else
-                <ul class="mb-0">
+                <ul class="mb-0 ps-3">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
                     @endforeach
@@ -82,7 +82,7 @@
                                 </td>
                                 <td>{{ $benih->varietas }}</td>
                                 <td><span class="badge bg-secondary px-2 py-1" style="font-size: 10px;">{{ strtoupper($benih->kelas_benih) }}</span></td>
-                                <td class="fw-bold text-dark">{{ number_format($benih->stok_min_ton, 2) }} Ton</td>
+                                <td class="fw-bold text-dark">{{ number_format($benih->stok_minimum, 2) }} Ton</td>
                                 <td>
                                     <!-- BUTTON EDIT MODAL POPUP -->
                                     <button type="button" class="btn btn-sm btn-outline-warning px-2 py-1 me-1" data-bs-toggle="modal" data-bs-target="#modalEditBenih{{ $benih->id }}" style="font-size: 11px; font-weight: 600;">
@@ -137,11 +137,16 @@
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
                                                         <label class="form-label fw-bold small" style="color: #34483e;">Kelas Benih</label>
-                                                        <input type="text" name="kelas_benih" class="form-control form-control-sm" value="{{ $benih->kelas_benih }}" placeholder="Contoh: BP / BR / BS" required>
+                                                        <select name="kelas_benih" class="form-select form-select-sm" required>
+                                                            <option value="BS" {{ strtoupper($benih->kelas_benih) == 'BS' ? 'selected' : '' }}>BS - Benih Penjenis (Breeder Seed)</option>
+                                                            <option value="BD" {{ strtoupper($benih->kelas_benih) == 'BD' ? 'selected' : '' }}>BD - Benih Dasar (Foundation Seed)</option>
+                                                            <option value="BP" {{ strtoupper($benih->kelas_benih) == 'BP' ? 'selected' : '' }}>BP - Benih Pokok (Stock Seed)</option>
+                                                            <option value="BR" {{ strtoupper($benih->kelas_benih) == 'BR' ? 'selected' : '' }}>BR - Benih Sebar (Extension Seed)</option>
+                                                        </select>
                                                     </div>
                                                     <div class="col-md-6 mb-3">
                                                         <label class="form-label fw-bold small" style="color: #34483e;">Stok Min (Ton)</label>
-                                                        <input type="number" step="0.01" name="stok_min_ton" class="form-control form-control-sm" value="{{ $benih->stok_min_ton }}" required>
+                                                        <input type="number" step="0.01" min="0" name="stok_minimum" class="form-control form-control-sm" value="{{ $benih->stok_minimum }}" required>
                                                     </div>
                                                 </div>
 
@@ -214,11 +219,17 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label fw-bold small" style="color: #34483e;">Kelas Benih</label>
-                            <input type="text" name="kelas_benih" class="form-control form-control-sm" placeholder="Contoh: BP / BR / BS" required>
+                            <select name="kelas_benih" class="form-select form-select-sm" required>
+                                <option value="">-- Pilih Kelas Benih --</option>
+                                <option value="BS">BS - Benih Penjenis (Breeder Seed)</option>
+                                <option value="BD">BD - Benih Dasar (Foundation Seed)</option>
+                                <option value="BP">BP - Benih Pokok (Stock Seed)</option>
+                                <option value="BR">BR - Benih Sebar (Extension Seed)</option>
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold small" style="color: #34483e;">Stok Min (Ton)</label>
-                            <input type="number" step="0.01" name="stok_min_ton" class="form-control form-control-sm" placeholder="Contoh: 100.00" required>
+                            <label class="form-label fw-bold small" style="color: #34483e;">Stok Min Peringatan (Ton)</label>
+                            <input type="number" step="0.01" min="0" name="stok_minimum" class="form-control form-control-sm" placeholder="Contoh: 0.10" value="{{ old('stok_minimum', '0.10') }}" required>
                         </div>
                     </div>
 

@@ -65,6 +65,17 @@
                 </div>
             @endif
 
+            @if ($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show py-2 px-3 small" role="alert">
+                    <ul class="mb-0 ps-3">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+
             <form action="{{ route('register') }}" method="POST">
                 @csrf
                 
@@ -80,6 +91,22 @@
                     <label class="form-label text-secondary fw-semibold">Alamat Email</label>
                     <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" placeholder="petugas@pertanian.go.id" required>
                     @error('email')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <!-- SELEKSI PROVINSI WILAYAH TUGAS -->
+                <div class="mb-3">
+                    <label class="form-label text-secondary fw-semibold">Provinsi Wilayah Tugas</label>
+                    <select name="provinsi_id" class="form-select @error('provinsi_id') is-invalid @enderror" required>
+                        <option value="">-- Pilih Provinsi --</option>
+                        @foreach($provinsis as $prov)
+                            <option value="{{ $prov->id }}" {{ old('provinsi_id') == $prov->id ? 'selected' : '' }}>
+                                {{ $prov->nama_provinsi }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('provinsi_id')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>

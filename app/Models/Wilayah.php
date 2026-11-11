@@ -10,7 +10,8 @@ class Wilayah extends Model
 {
     use HasFactory;
 
-    protected $table = 'wilayahs';
+    // Diubah ke 'kabupatens' sesuai tabel riil di database MySQL kamu
+    protected $table = 'kabupatens';
 
     protected $fillable = [
         'kode_wilayah',

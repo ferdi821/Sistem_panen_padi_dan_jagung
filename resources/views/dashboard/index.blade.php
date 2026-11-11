@@ -64,6 +64,7 @@
             </div>
         </div>
 
+        <!-- Total Persediaan Benih (Ton) -->
         <div class="col-12 col-sm-6 col-xl-3">
             <div class="card border-0 shadow-sm bg-primary text-white h-100" style="border-radius: 14px;">
                 <div class="card-body p-3 d-flex flex-column justify-content-between">
@@ -74,8 +75,11 @@
                         </div>
                     </div>
                     <h3 class="fw-bold mb-0 fs-3">
-                        {{ number_format($totalStokKg ?? 0, 2) }} 
-                        <span class="fs-6 fw-normal text-white-50">Kg</span>
+                        @php 
+                            $stokDalamTon = isset($totalStokKg) ? ($totalStokKg > 100 ? $totalStokKg / 1000 : $totalStokKg) : 0;
+                        @endphp
+                        {{ number_format($stokDalamTon, 2) }} 
+                        <span class="fs-6 fw-normal text-white-50">Ton</span>
                     </h3>
                 </div>
             </div>
@@ -173,18 +177,23 @@
     </div>
 </div>
 
-<!-- SCRIPT CHART.JS ADMIN -->
+<!-- SCRIPT CHART.JS ADMIN DINAMIS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const ctx = document.getElementById('adminTrenChart').getContext('2d');
+        
+        const labelsData = {!! json_encode($labelsFinal ?? ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']) !!};
+        const padiData = {!! json_encode($dataPadiFinal ?? [0,0,0,0,0,0,0,0,0,0,0,0]) !!};
+        const jagungData = {!! json_encode($dataJagungFinal ?? [0,0,0,0,0,0,0,0,0,0,0,0]) !!};
+
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov'],
+                labels: labelsData,
                 datasets: [
-                    { label: 'Padi (Ton)', data: [120, 145, 160, 130, 175, 168], backgroundColor: '#106742', borderRadius: 6 },
-                    { label: 'Jagung (Ton)', data: [65, 80, 75, 90, 60, 55], backgroundColor: '#ffc107', borderRadius: 6 }
+                    { label: 'Padi (Ton)', data: padiData, backgroundColor: '#106742', borderRadius: 6 },
+                    { label: 'Jagung (Ton)', data: jagungData, backgroundColor: '#ffc107', borderRadius: 6 }
                 ]
             },
             options: {
