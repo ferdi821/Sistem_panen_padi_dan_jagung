@@ -13,9 +13,8 @@ class WilayahController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $hasProvinsiIdColumn = Schema::hasColumn('wilayahs', 'provinsi_id');
+        $hasProvinsiIdColumn = Schema::hasColumn('kabupatens', 'provinsi_id');
 
-        // Jika Petugas Provinsi, filter wilayah berdasarkan provinsinya
         if ($user->hasRole('petugas_provinsi')) {
             $query = Wilayah::query();
 
@@ -28,7 +27,6 @@ class WilayahController extends Controller
             $wilayahs = $query->latest()->paginate(10);
             $provinsis = Provinsi::where('id', $user->provinsi_id)->get();
         } else {
-            // Admin Pusat melihat semua data wilayah
             $wilayahs = $hasProvinsiIdColumn 
                 ? Wilayah::with('provinsi')->latest()->paginate(10)
                 : Wilayah::latest()->paginate(10);
@@ -48,15 +46,23 @@ class WilayahController extends Controller
         }
 
         $validated = $request->validate([
-            'kode_wilayah' => 'required|string|max:50|unique:wilayahs,kode_wilayah',
-            'provinsi_id'  => 'required|exists:provinsis,id',
-            'kabupaten'    => 'required|string|max:100',
-            'nama_gudang'  => 'required|string|max:255',
-            'kapasitas_ton'=> 'required|numeric|min:0',
-            'alamat'       => 'nullable|string',
+            'kode_wilayah'  => 'required|string|max:50|unique:kabupatens,kode_wilayah',
+            'provinsi_id'   => 'required|exists:provinsis,id',
+            'kabupaten'     => 'required|string|max:100',
+            'nama_gudang'   => 'required|string|max:255',
+            'kapasitas_ton' => 'required|numeric|min:0',
+            'alamat'        => 'nullable|string',
         ]);
 
-        Wilayah::create($validated);
+        Wilayah::create([
+            'kode_wilayah'   => $validated['kode_wilayah'],
+            'kode_kabupaten' => $validated['kode_wilayah'],
+            'provinsi_id'    => $validated['provinsi_id'],
+            'nama_kabupaten' => $validated['kabupaten'],
+            'nama_gudang'    => $validated['nama_gudang'],
+            'kapasitas_ton'  => $validated['kapasitas_ton'],
+            'alamat'         => $validated['alamat'] ?? null,
+        ]);
 
         return redirect()->route('wilayah.index')->with('success', 'Master Wilayah & Gudang BPSIP berhasil ditambahkan!');
     }
@@ -75,15 +81,23 @@ class WilayahController extends Controller
         }
 
         $validated = $request->validate([
-            'kode_wilayah' => 'required|string|max:50|unique:wilayahs,kode_wilayah,' . $id,
-            'provinsi_id'  => 'required|exists:provinsis,id',
-            'kabupaten'    => 'required|string|max:100',
-            'nama_gudang'  => 'required|string|max:255',
-            'kapasitas_ton'=> 'required|numeric|min:0',
-            'alamat'       => 'nullable|string',
+            'kode_wilayah'  => 'required|string|max:50|unique:kabupatens,kode_wilayah,' . $id,
+            'provinsi_id'   => 'required|exists:provinsis,id',
+            'kabupaten'     => 'required|string|max:100',
+            'nama_gudang'   => 'required|string|max:255',
+            'kapasitas_ton' => 'required|numeric|min:0',
+            'alamat'        => 'nullable|string',
         ]);
 
-        $wilayah->update($validated);
+        $wilayah->update([
+            'kode_wilayah'   => $validated['kode_wilayah'],
+            'kode_kabupaten' => $validated['kode_wilayah'],
+            'provinsi_id'    => $validated['provinsi_id'],
+            'nama_kabupaten' => $validated['kabupaten'],
+            'nama_gudang'    => $validated['nama_gudang'],
+            'kapasitas_ton'  => $validated['kapasitas_ton'],
+            'alamat'         => $validated['alamat'] ?? null,
+        ]);
 
         return redirect()->route('wilayah.index')->with('success', 'Master Wilayah & Gudang BPSIP berhasil diperbarui!');
     }

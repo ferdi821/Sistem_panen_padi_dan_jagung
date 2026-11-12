@@ -10,19 +10,40 @@
     main.flex-grow-1 {
         flex-grow: 0 !important;
     }
+    .pagination .page-link {
+        color: #106742;
+        font-size: 13px;
+    }
+    .pagination .page-item.active .page-link {
+        background-color: #106742;
+        border-color: #106742;
+        color: #fff;
+    }
 </style>
 
 <div class="container-fluid px-4 py-3">
 
-    <!-- HEADER HALAMAN -->
+    <!-- HEADER HALAMAN & FILTER TANGGAL RINGKAS -->
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h3 class="fw-bold mb-1" style="color: #106742;">Riwayat Mutasi Stok Benih</h3>
             <p class="text-muted small mb-0">Catatan log transaksi distribusi stok benih masuk dan keluar seluruh wilayah.</p>
         </div>
 
-        <div>
-            <a href="{{ route('stok.index') }}" class="btn btn-secondary shadow-sm px-3 py-2" style="font-size: 13px; font-weight: 600;">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <form action="{{ route('stok.riwayat') }}" method="GET" class="d-flex align-items-center gap-2">
+                <input type="date" name="tanggal" class="form-control form-control-sm shadow-sm" value="{{ $tanggal ?? '' }}" style="width: 150px; height: 36px;">
+                <button type="submit" class="btn btn-success shadow-sm px-3" style="background-color: #106742; border: none; font-size: 13px; font-weight: 600; height: 36px;">
+                    Cari
+                </button>
+                @if(!empty($tanggal))
+                    <a href="{{ route('stok.riwayat') }}" class="btn btn-outline-secondary shadow-sm px-3" style="font-size: 13px; font-weight: 600; height: 36px; line-height: 22px;">
+                        Reset
+                    </a>
+                @endif
+            </form>
+
+            <a href="{{ route('stok.index') }}" class="btn btn-secondary shadow-sm px-3" style="font-size: 13px; font-weight: 600; height: 36px; line-height: 22px;">
                 Kembali ke Stok Wilayah
             </a>
         </div>
@@ -95,7 +116,6 @@
                                 <td class="text-start">{{ $item->user->name ?? 'Sistem' }}</td>
                                 @role('admin_pusat')
                                     <td>
-                                        <!-- BUTTON PEMICU MODAL EDIT RIWAYAT -->
                                         <button type="button" class="btn btn-sm btn-primary px-2 py-1 me-1" data-bs-toggle="modal" data-bs-target="#modalEditRiwayat{{ $item->id }}" style="background-color: #2563eb; border: none; font-size: 11px; font-weight: 600;">
                                             Edit
                                         </button>
@@ -122,8 +142,6 @@
                                                 @csrf
                                                 @method('PUT')
                                                 <div class="modal-body p-4 text-start">
-                                                    
-                                                    <!-- INFORMASI DETAIL TRANSAKSI -->
                                                     <div class="p-3 mb-3 bg-light rounded" style="border: 1px solid #e2e8f0; font-size: 12px;">
                                                         <div><strong>Provinsi:</strong> {{ $item->stokBenih->provinsi->nama_provinsi ?? '-' }}</div>
                                                         <div><strong>Benih:</strong> {{ $item->stokBenih->benih->nama_benih ?? '-' }} ({{ $item->stokBenih->benih->varietas ?? '-' }})</div>
@@ -156,7 +174,6 @@
                                                         <label class="form-label small" style="color: #34483e;">Keterangan</label>
                                                         <textarea name="keterangan" class="form-control form-control-sm" rows="2">{{ $item->keterangan }}</textarea>
                                                     </div>
-
                                                 </div>
                                                 <div class="modal-footer border-0 pt-0 px-4 pb-4">
                                                     <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Batal</button>
@@ -169,21 +186,23 @@
                             @endrole
                         @empty
                             <tr>
-                                <td colspan="8" class="py-4 text-muted">Belum ada riwayat mutasi stok benih.</td>
+                                <td colspan="8" class="py-4 text-muted">
+                                    {{ !empty($tanggal) ? 'Tidak ada riwayat mutasi pada tanggal tersebut.' : 'Belum ada riwayat mutasi stok benih minggu ini.' }}
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
 
-    <!-- PAGINATION -->
-    @if ($mutasis->hasPages())
-        <div class="d-flex justify-content-center mt-3 mb-4">
-            {{ $mutasis->links() }}
-        </div>
-    @endif
+        <!-- FOOTER PAGINATION (MAKSIMAL 10 DATA PER HALAMAN) -->
+        @if ($mutasis->hasPages())
+            <div class="card-footer bg-white border-top py-2 px-3 d-flex justify-content-end">
+                {{ $mutasis->links('pagination::bootstrap-5') }}
+            </div>
+        @endif
+    </div>
 
 </div>
 @endsection

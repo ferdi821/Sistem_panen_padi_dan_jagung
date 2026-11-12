@@ -2,13 +2,11 @@
 
 @section('title', 'Rekapitulasi Stok Benih Wilayah - Excel BBPSIP')
 
-<!-- CDN Flatpickr CSS -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/material_green.css">
-
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_green.css">
+
 <style>
-    /* Custom Styling Garis Pembatas Header Tabel */
     .table-rekap-excel th, .table-rekap-excel td {
         border-color: #a0a0a0 !important;
     }
@@ -39,13 +37,14 @@
         <div class="card-body p-2">
             <form action="{{ route('petugas.report.rekap') }}" method="GET" class="row g-2 align-items-center">
                 
-                <!-- Direct Date Range Picker Input -->
                 <div class="col-md-5">
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar-range text-success"></i></span>
+                        <span class="input-group-text bg-white border-end-0" id="btnCalendarIcon" style="cursor: pointer;">
+                            <i class="bi bi-calendar-range text-success"></i>
+                        </span>
                         <input type="text" id="rangePickerPetugas" class="form-control bg-white border-start-0" placeholder="Pilih Rentang Tanggal (Kalender)..." readonly style="cursor: pointer;">
-                        <input type="hidden" name="start_date" id="startDatePetugas" value="{{ request('start_date', $start->format('Y-m-d')) }}">
-                        <input type="hidden" name="end_date" id="endDatePetugas" value="{{ request('end_date', $end->format('Y-m-d')) }}">
+                        <input type="hidden" name="start_date" id="startDatePetugas" value="{{ $start->format('Y-m-d') }}">
+                        <input type="hidden" name="end_date" id="endDatePetugas" value="{{ $end->format('Y-m-d') }}">
                     </div>
                 </div>
 
@@ -73,7 +72,6 @@
             <div class="table-responsive" style="max-height: 75vh;">
                 <table class="table table-bordered table-hover align-middle mb-0 text-center table-rekap-excel" style="font-size: 0.76rem;">
                     <thead class="align-middle text-nowrap" style="background-color: #f8f9fa;">
-                        <!-- Header Baris 1 -->
                         <tr class="fw-bold">
                             <th rowspan="3" width="30px" class="bg-light">No</th>
                             <th rowspan="3" width="180px" class="bg-light text-start">Kabupaten / Kota</th>
@@ -85,7 +83,6 @@
                             <th colspan="4" class="table-light border-thick-bottom">Benih (Prosesing)</th>
                             <th colspan="6" class="table-warning border-thick-bottom">Benih (Persiapan Panen)</th>
                         </tr>
-                        <!-- Header Baris 2 -->
                         <tr class="fw-bold">
                             <th colspan="2" class="border-thick-bottom">FS</th>
                             <th colspan="2" class="border-thick-bottom border-thick-right">SS</th>
@@ -94,7 +91,6 @@
                             <th colspan="2" class="border-thick-bottom">FS</th><th colspan="2" class="border-thick-bottom">SS</th>
                             <th colspan="3" class="border-thick-bottom">FS</th><th colspan="3" class="border-thick-bottom">SS</th>
                         </tr>
-                        <!-- Header Baris 3 (Sub-Kolom) -->
                         <tr class="fw-bold text-muted small">
                             <th>Volume (Ton)</th><th>Varietas</th><th>Volume (Ton)</th><th class="border-thick-right">Varietas</th>
                             <th>Volume (Ton)</th><th>Varietas</th><th>Volume (Ton)</th><th>Varietas</th>
@@ -149,7 +145,7 @@
                             @endforeach
                         @empty
                         <tr>
-                            <td colspan="28" class="py-4 text-muted">Belum ada data rekapitulasi wilayah.</td>
+                            <td colspan="28" class="py-4 text-muted">Belum ada data rekapitulasi wilayah pada periode ini.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -160,24 +156,47 @@
 
 </div>
 
-<!-- CDN Flatpickr JS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const startVal = document.getElementById('startDatePetugas').value;
-    const endVal = document.getElementById('endDatePetugas').value;
+(function initPetugasDatePicker() {
+    function setup() {
+        const pickerEl = document.getElementById('rangePickerPetugas');
+        const startEl  = document.getElementById('startDatePetugas');
+        const endEl    = document.getElementById('endDatePetugas');
+        const iconEl   = document.getElementById('btnCalendarIcon');
 
-    flatpickr("#rangePickerPetugas", {
-        mode: "range",
-        dateFormat: "Y-m-d",
-        defaultDate: [startVal, endVal],
-        onClose: function(selectedDates, dateStr, instance) {
-            if (selectedDates.length === 2) {
-                document.getElementById('startDatePetugas').value = instance.formatDate(selectedDates[0], "Y-m-d");
-                document.getElementById('endDatePetugas').value = instance.formatDate(selectedDates[1], "Y-m-d");
+        if (!pickerEl || typeof flatpickr === 'undefined') return;
+
+        const fp = flatpickr(pickerEl, {
+            mode: "range",
+            dateFormat: "Y-m-d",
+            defaultDate: [startEl.value, endEl.value],
+            clickOpens: true,
+            allowInput: false,
+            onClose: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length === 1) {
+                    const singleDate = instance.formatDate(selectedDates[0], "Y-m-d");
+                    startEl.value = singleDate;
+                    endEl.value   = singleDate;
+                } else if (selectedDates.length === 2) {
+                    startEl.value = instance.formatDate(selectedDates[0], "Y-m-d");
+                    endEl.value   = instance.formatDate(selectedDates[1], "Y-m-d");
+                }
             }
+        });
+
+        if (iconEl) {
+            iconEl.addEventListener('click', function() {
+                fp.open();
+            });
         }
-    });
-});
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setup);
+    } else {
+        setup();
+    }
+})();
 </script>
 @endsection

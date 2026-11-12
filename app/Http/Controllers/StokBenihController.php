@@ -6,6 +6,7 @@ use App\Models\Benih;
 use App\Models\Provinsi;
 use App\Models\StokBenih;
 use App\Models\TransaksiStokBenih;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -31,7 +32,7 @@ class StokBenihController extends Controller
 
         $benihQuery = Benih::query();
         if ($user->hasRole('petugas_provinsi')) {
-            $benihQuery->where(function($q) use ($user) {
+            $benihQuery->where(function ($q) use ($user) {
                 $q->where('provinsi_id', $user->provinsi_id)
                   ->orWhereNull('provinsi_id');
             });
@@ -92,7 +93,7 @@ class StokBenihController extends Controller
     public function storeMasuk(Request $request)
     {
         $user = auth()->user();
-        
+
         $validated = $request->validate([
             'benih_id'          => 'required|exists:benihs,id',
             'sumber_tujuan'     => 'required|string|max:150',
@@ -104,24 +105,21 @@ class StokBenihController extends Controller
         return DB::transaction(function () use ($validated, $user) {
             $provinsiId = $user->provinsi_id;
 
-            // Cari atau buatkan stok benih untuk provinsi ini
             $stok = StokBenih::firstOrCreate(
                 [
                     'provinsi_id' => $provinsiId,
                     'benih_id'    => $validated['benih_id'],
                 ],
                 [
-                    'jumlah_stok_kg' => 0.00
+                    'jumlah_stok_kg' => 0.00,
                 ]
             );
 
             $stokSebelum = $stok->jumlah_stok_kg;
             $stokSesudah = $stokSebelum + $validated['jumlah_kg'];
 
-            // Update nilai fisik stok
             $stok->update(['jumlah_stok_kg' => $stokSesudah]);
 
-            // Catat transaksi mutasi
             TransaksiStokBenih::create([
                 'stok_benih_id'     => $stok->id,
                 'pengujian_mutu_id' => null,
@@ -179,7 +177,7 @@ class StokBenihController extends Controller
         });
     }
 
-    public function riwayatMutasi()
+    public function riwayatMutasi(Request $request)
     {
         $user = auth()->user();
         $query = TransaksiStokBenih::with(['stokBenih.provinsi', 'stokBenih.benih', 'user']);
@@ -190,8 +188,25 @@ class StokBenihController extends Controller
             });
         }
 
-        $mutasis = $query->latest()->paginate(15);
-        return view('stok.riwayat', compact('mutasis'));
+        $tanggal = $request->get('tanggal');
+
+        if ($request->filled('tanggal')) {
+            // Jika memilih tanggal spesifik (termasuk minggu lalu)
+            $query->whereDate('tanggal_transaksi', Carbon::parse($tanggal)->toDateString());
+        } else {
+            // Default: otomatis tampilkan mutasi minggu berjalan saja (auto-reset mingguan)
+            $query->whereBetween('tanggal_transaksi', [
+                Carbon::now()->startOfWeek()->toDateString(),
+                Carbon::now()->endOfWeek()->toDateString(),
+            ]);
+        }
+
+        $mutasis = $query->orderBy('tanggal_transaksi', 'desc')
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('stok.riwayat', compact('mutasis', 'tanggal'));
     }
 
     public function editRiwayat($id)
@@ -233,7 +248,7 @@ class StokBenihController extends Controller
                 'jumlah_kg'         => $validated['jumlah_kg'],
                 'stok_sesudah'      => $stok->jumlah_stok_kg,
                 'sumber_tujuan'     => $validated['sumber_tujuan'],
-                'tanggal_transaksi' => \Carbon\Carbon::parse($validated['tanggal_transaksi']),
+                'tanggal_transaksi' => Carbon::parse($validated['tanggal_transaksi']),
                 'keterangan'        => $validated['keterangan'],
             ]);
 

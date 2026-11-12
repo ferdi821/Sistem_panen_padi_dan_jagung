@@ -10,13 +10,13 @@ class Wilayah extends Model
 {
     use HasFactory;
 
-    // Diubah ke 'kabupatens' sesuai tabel riil di database MySQL kamu
     protected $table = 'kabupatens';
 
     protected $fillable = [
         'kode_wilayah',
+        'kode_kabupaten',
         'provinsi_id',
-        'kabupaten',
+        'nama_kabupaten',
         'nama_gudang',
         'alamat',
         'kapasitas_ton',
@@ -24,8 +24,13 @@ class Wilayah extends Model
     ];
 
     /**
-     * Relasi ke model Provinsi untuk mengatasi RelationNotFoundException
+     * Accessor agar $item->kabupaten di view tetap terbaca dari kolom nama_kabupaten
      */
+    public function getKabupatenAttribute()
+    {
+        return $this->attributes['nama_kabupaten'] ?? $this->attributes['kabupaten'] ?? '-';
+    }
+
     public function provinsi(): BelongsTo
     {
         return $this->belongsTo(Provinsi::class, 'provinsi_id');

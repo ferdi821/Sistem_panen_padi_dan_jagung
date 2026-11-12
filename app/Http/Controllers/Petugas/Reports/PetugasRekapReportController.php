@@ -19,8 +19,7 @@ class PetugasRekapReportController extends Controller
         $user = auth()->user();
         $namaProvinsi = $user->provinsi->nama_provinsi ?? 'Wilayah Saya';
 
-        [$start, $end] = $this->getFilterDates($request->start_date, $request->end_date);
-        $periode = 'custom';
+        [$start, $end, $periode] = $this->getFilterDates($request);
 
         $rekapData = $this->getRekapWilayahData($user->provinsi_id, $namaProvinsi, $start, $end);
         
@@ -32,8 +31,7 @@ class PetugasRekapReportController extends Controller
         $user = auth()->user();
         $namaProvinsi = $user->provinsi->nama_provinsi ?? 'Wilayah Saya';
         
-        [$start, $end] = $this->getFilterDates($request->start_date, $request->end_date);
-        $periode = 'custom';
+        [$start, $end, $periode] = $this->getFilterDates($request);
 
         $rekapData = $this->getRekapWilayahData($user->provinsi_id, $namaProvinsi, $start, $end);
 
@@ -45,20 +43,24 @@ class PetugasRekapReportController extends Controller
 
     private function getRekapWilayahData($provinsiId, $namaProvinsi, $start, $end)
     {
-        // Deteksi nama kolom kabupaten secara otomatis agar bebas error SQL
-        $kabColumn = Schema::hasColumn('wilayahs', 'kabupaten') ? 'kabupaten' : (Schema::hasColumn('wilayahs', 'nama_kabupaten') ? 'nama_kabupaten' : null);
+        $tableName = (new Wilayah)->getTable();
+        $kabColumn = Schema::hasColumn($tableName, 'nama_kabupaten')
+            ? 'nama_kabupaten'
+            : (Schema::hasColumn($tableName, 'kabupaten') ? 'kabupaten' : null);
 
         $query = Wilayah::query();
 
         if ($provinsiId) {
-            $query->where(function($q) use ($provinsiId, $namaProvinsi) {
-                $q->where('provinsi_id', $provinsiId);
-                if (Schema::hasColumn('wilayahs', 'nama_provinsi')) {
-                    $q->orWhere('nama_provinsi', $namaProvinsi);
-                }
-            });
-        } elseif (Schema::hasColumn('wilayahs', 'nama_provinsi')) {
+            $query->where('provinsi_id', $provinsiId);
+        } elseif (Schema::hasColumn($tableName, 'nama_provinsi')) {
             $query->where('nama_provinsi', $namaProvinsi);
+        } else {
+            return [];
+        }
+
+        // Filter kota berdasarkan rentang tanggal input (created_at)
+        if (Schema::hasColumn($tableName, 'created_at')) {
+            $query->whereBetween('created_at', [$start, $end]);
         }
 
         if ($kabColumn) {
@@ -69,7 +71,7 @@ class PetugasRekapReportController extends Controller
 
         $wilayahs = $query->get();
 
-        // JIKA KOSONG: Jangan pakai dummy fiktif "Manggungharja", kembalikan array kosong agar tabel menampilkan pesan "Belum ada data"
+        // JIKA KOSONG: Kembalikan array kosong agar tabel menampilkan pesan "Belum ada data"
         if ($wilayahs->isEmpty()) {
             return [];
         }
@@ -78,11 +80,23 @@ class PetugasRekapReportController extends Controller
         $startDateStr = $start->format('Y-m-d');
         $endDateStr   = $end->format('Y-m-d');
 
-        foreach ($wilayahs as $wil) {
-            $namaKabupaten = $wil->kabupaten ?? $wil->nama_kabupaten ?? $namaProvinsi;
+        // Cek kolom relasi kota di tabel stok_benihs & catatan_panens (jika ada)
+        $stokHasWilayahId  = Schema::hasColumn('stok_benihs', 'wilayah_id');
+        $stokHasKabId      = Schema::hasColumn('stok_benihs', 'kabupaten_id');
+        $panenHasWilayahId = Schema::hasColumn('catatan_panens', 'wilayah_id');
+        $panenHasKabId     = Schema::hasColumn('catatan_panens', 'kabupaten_id');
 
-            // Ambil master stok benih milik provinsi ini
-            $stokItems = StokBenih::where('provinsi_id', $provinsiId)->with('benih')->get();
+        foreach ($wilayahs as $wil) {
+            $namaKabupaten = $wil->nama_kabupaten ?? $wil->kabupaten ?? $namaProvinsi;
+
+            // Ambil master stok benih milik provinsi/kota ini
+            $stokQuery = StokBenih::where('provinsi_id', $provinsiId)->with('benih');
+            if ($stokHasWilayahId) {
+                $stokQuery->where('wilayah_id', $wil->id);
+            } elseif ($stokHasKabId) {
+                $stokQuery->where('kabupaten_id', $wil->id);
+            }
+            $stokItems = $stokQuery->get();
 
             $subRows = [];
 
@@ -92,28 +106,33 @@ class PetugasRekapReportController extends Controller
                     $kelas   = strtoupper($s->benih->kelas_benih ?? 'BR');
                     $isFS    = ($kelas === 'BD' || $kelas === 'FS');
 
-                    // 1. Transaksi Keluar HANYA pada rentang tanggal filter
+                    // 1. Transaksi Keluar pada rentang tanggal filter
                     $volDist = (float) TransaksiStokBenih::where('stok_benih_id', $s->id)
                                 ->where('jenis_transaksi', 'keluar')
                                 ->whereBetween('tanggal_transaksi', [$startDateStr, $endDateStr])
                                 ->sum('jumlah_kg');
 
-                    // 2. Transaksi Masuk HANYA pada rentang tanggal filter
+                    // 2. Transaksi Masuk pada rentang tanggal filter
                     $volMasuk = (float) TransaksiStokBenih::where('stok_benih_id', $s->id)
                                 ->where('jenis_transaksi', 'masuk')
                                 ->whereBetween('tanggal_transaksi', [$startDateStr, $endDateStr])
                                 ->sum('jumlah_kg');
 
-                    // 3. Catatan Panen HANYA pada rentang tanggal filter
-                    $panen = CatatanPanen::where('provinsi_id', $provinsiId)
-                                ->whereBetween('tanggal_panen', [$startDateStr, $endDateStr])
-                                ->first();
+                    // 3. Catatan Panen pada rentang tanggal filter
+                    $panenQuery = CatatanPanen::where('provinsi_id', $provinsiId)
+                                ->whereBetween('tanggal_panen', [$startDateStr, $endDateStr]);
+                    if ($panenHasWilayahId) {
+                        $panenQuery->where('wilayah_id', $wil->id);
+                    } elseif ($panenHasKabId) {
+                        $panenQuery->where('kabupaten_id', $wil->id);
+                    }
+                    $panen = $panenQuery->first();
 
                     $volPanen = $panen ? (float) $panen->jumlah_panen_ton : 0.00;
                     $tglPanen = $panen ? Carbon::parse($panen->tanggal_panen)->format('d/m/Y') : '-';
 
-                    $adaAktivitas = ($volDist > 0 || $volMasuk > 0 || $volPanen > 0);
-                    $volTersedia  = $adaAktivitas ? (float) $s->jumlah_stok_kg : 0.00;
+                    $adaAktivitas = ($volDist > 0 || $volMasuk > 0 || $volPanen > 0 || (float) $s->jumlah_stok_kg > 0);
+                    $volTersedia  = (float) $s->jumlah_stok_kg;
 
                     if ($adaAktivitas) {
                         $subRows[] = [
@@ -176,11 +195,39 @@ class PetugasRekapReportController extends Controller
         return $rekapData;
     }
 
-    private function getFilterDates($startDate, $endDate)
+    private function getFilterDates(Request $request)
     {
-        $start = $startDate ? Carbon::parse($startDate)->startOfDay() : Carbon::now()->startOfMonth();
-        $end   = $endDate ? Carbon::parse($endDate)->endOfDay() : Carbon::now()->endOfMonth();
+        $periode = $request->get('periode', 'hari_ini');
 
-        return [$start, $end];
+        // Jika user memilih rentang tanggal custom dari kalender
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $start = Carbon::parse($request->start_date)->startOfDay();
+            $end   = Carbon::parse($request->end_date)->endOfDay();
+            return [$start, $end, $request->get('periode', 'custom')];
+        }
+
+        // Preset periode cepat: Hari Ini (default), Mingguan, Bulanan, Tahunan
+        switch ($periode) {
+            case 'mingguan':
+                $start = Carbon::now()->startOfWeek();
+                $end   = Carbon::now()->endOfWeek();
+                break;
+            case 'bulanan':
+                $start = Carbon::now()->startOfMonth();
+                $end   = Carbon::now()->endOfMonth();
+                break;
+            case 'tahunan':
+                $start = Carbon::now()->startOfYear();
+                $end   = Carbon::now()->endOfYear();
+                break;
+            case 'hari_ini':
+            default:
+                $start = Carbon::today()->startOfDay();
+                $end   = Carbon::today()->endOfDay();
+                $periode = 'hari_ini';
+                break;
+        }
+
+        return [$start, $end, $periode];
     }
 }

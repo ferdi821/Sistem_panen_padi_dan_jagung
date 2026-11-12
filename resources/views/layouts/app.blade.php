@@ -204,6 +204,7 @@
             padding: 0.5rem 0.75rem;
             background: rgba(0, 0, 0, 0.2);
             border-radius: 12px;
+            color: #ffffff;
         }
 
         #sidebar.collapsed .user-card {
@@ -223,6 +224,7 @@
             justify-content: center;
             font-weight: 700;
             font-size: 0.9rem;
+            flex-shrink: 0;
         }
 
         .scope-badge {
@@ -424,7 +426,7 @@
                         {{ $userInitial }}
                     </div>
                     <div class="user-info-text overflow-hidden">
-                        <div class="fw-bold text-truncate" style="font-size: 0.85rem;">{{ $userName }}</div>
+                        <div class="fw-bold text-truncate text-white" style="font-size: 0.85rem;">{{ $userName }}</div>
                         <small class="d-block text-truncate text-white-50" style="font-size: 0.7rem;">{{ $userRole }}</small>
                         @if($namaProvinsi)
                             <span class="scope-badge"><i class="bi bi-geo-alt-fill me-1"></i>{{ $namaProvinsi }}</span>
