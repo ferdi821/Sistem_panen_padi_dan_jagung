@@ -16,6 +16,11 @@ class StokBenih extends Model
         return $this->belongsTo(Provinsi::class, 'provinsi_id');
     }
 
+    public function wilayah()
+    {
+        return $this->belongsTo(Wilayah::class, 'wilayah_id');
+    }
+
     public function benih()
     {
         return $this->belongsTo(Benih::class, 'benih_id');

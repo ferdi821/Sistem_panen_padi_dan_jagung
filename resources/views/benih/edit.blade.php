@@ -26,8 +26,8 @@
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Komoditas</label>
                             <select name="komoditas" class="form-select" required>
-                                <option value="padi" {{ $benih->komoditas == 'padi' ? 'selected' : '' }}>Padi</option>
-                                <option value="jagung" {{ $benih->komoditas == 'jagung' ? 'selected' : '' }}>Jagung</option>
+                                <option value="padi" {{ strtolower($benih->komoditas) == 'padi' ? 'selected' : '' }}>Padi</option>
+                                <option value="jagung" {{ strtolower($benih->komoditas) == 'jagung' ? 'selected' : '' }}>Jagung</option>
                             </select>
                         </div>
                         <div class="col-md-4 mb-3">
@@ -37,9 +37,8 @@
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Kelas Benih</label>
                             <select name="kelas_benih" class="form-select" required>
-                                <option value="BR" {{ $benih->kelas_benih == 'BR' ? 'selected' : '' }}>BR (Benih Sebar)</option>
-                                <option value="BP" {{ $benih->kelas_benih == 'BP' ? 'selected' : '' }}>BP (Benih Pokok)</option>
-                                <option value="BD" {{ $benih->kelas_benih == 'BD' ? 'selected' : '' }}>BD (Benih Dasar)</option>
+                                <option value="FS" {{ in_array(strtoupper($benih->kelas_benih), ['FS', 'BD']) ? 'selected' : '' }}>FS - Benih Dasar (Foundation Seed)</option>
+                                <option value="SS" {{ in_array(strtoupper($benih->kelas_benih), ['SS', 'BP']) ? 'selected' : '' }}>SS - Benih Pokok (Stock Seed)</option>
                             </select>
                         </div>
                     </div>

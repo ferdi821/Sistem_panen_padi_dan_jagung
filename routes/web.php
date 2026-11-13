@@ -28,15 +28,16 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 // Route Authenticated
 Route::middleware(['auth'])->group(function () {
 
+    // Halaman Monitoring Utama (Bisa dilihat Admin Pusat & Petugas Provinsi)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/panen', [PanenController::class, 'index'])->name('panen.index');
     Route::get('/stok-benih', [StokBenihController::class, 'index'])->name('stok.index');
     Route::get('/stok-benih/riwayat', [StokBenihController::class, 'riwayatMutasi'])->name('stok.riwayat');
 
-    // Akses Master Data Varietas & Wilayah (Admin Pusat & Petugas Provinsi)
+    // View-only Master Data Varietas & Wilayah untuk Admin Pusat & Petugas Provinsi
     Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
-        Route::resource('benih', BenihController::class)->except(['show']);
-        Route::resource('wilayah', WilayahController::class)->except(['create', 'edit', 'show']);
+        Route::get('/benih', [BenihController::class, 'index'])->name('benih.index');
+        Route::get('/wilayah', [WilayahController::class, 'index'])->name('wilayah.index');
     });
 
     // Admin Pusat Management & Laporan Rekap Nasional
@@ -53,26 +54,34 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/stok-benih/riwayat/{id}', [StokBenihController::class, 'updateRiwayat'])->name('stok.riwayat.update');
         Route::delete('/stok-benih/riwayat/{id}', [StokBenihController::class, 'destroyRiwayat'])->name('stok.riwayat.destroy');
 
-        // LAPORAN ADMIN PUSAT
+        // LAPORAN ADMIN PUSAT (PDF & EXCEL)
         Route::get('/admin/rekap-bbpsip', [AdminRekapReportController::class, 'index'])->name('admin.report.rekap');
         Route::get('/admin/rekap-bbpsip/pdf', [AdminRekapReportController::class, 'exportPdf'])->name('admin.report.rekap.pdf');
+        Route::get('/admin/rekap-bbpsip/excel', [AdminRekapReportController::class, 'exportExcel'])->name('admin.report.rekap.excel');
     });
 
-    // Petugas Provinsi Laporan Rekap Wilayah
+    // Petugas Provinsi: Laporan Rekap Wilayah & SEMUA OPERASIONAL INPUT/EDIT/HAPUS
     Route::middleware(['role:petugas_provinsi'])->group(function () {
+        // Laporan Rekap (PDF & EXCEL)
         Route::get('/petugas/rekap-bbpsip', [PetugasRekapReportController::class, 'index'])->name('petugas.report.rekap');
         Route::get('/petugas/rekap-bbpsip/pdf', [PetugasRekapReportController::class, 'exportPdf'])->name('petugas.report.rekap.pdf');
-    });
+        Route::get('/petugas/rekap-bbpsip/excel', [PetugasRekapReportController::class, 'exportExcel'])->name('petugas.report.rekap.excel');
 
-    // Transaksi (Admin & Petugas)
-    Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
+        // CRUD Master Benih (Khusus Petugas)
+        Route::resource('benih', BenihController::class)->except(['index', 'show']);
+
+        // CRUD Master Wilayah & Gudang (Khusus Petugas)
+        Route::resource('wilayah', WilayahController::class)->except(['index', 'create', 'edit', 'show']);
+
+        // CRUD Data Panen (Khusus Petugas)
         Route::post('/panen', [PanenController::class, 'store'])->name('panen.store');
         Route::put('/panen/{panen}', [PanenController::class, 'update'])->name('panen.update');
         Route::delete('/panen/{panen}', [PanenController::class, 'destroy'])->name('panen.destroy');
-            
+
+        // Transaksi & CRUD Stok Benih Wilayah (Khusus Petugas)
+        Route::post('/stok-benih/target', [StokBenihController::class, 'storeTarget'])->name('stok.target.store');
         Route::post('/stok-benih/keluar', [StokBenihController::class, 'storeKeluar'])->name('stok.keluar.store');
         Route::post('/stok-benih/masuk', [StokBenihController::class, 'storeMasuk'])->name('stok.masuk.store');
-
         Route::get('/stok-benih/{id}/edit', [StokBenihController::class, 'edit'])->name('stok.edit');
         Route::put('/stok-benih/{id}', [StokBenihController::class, 'update'])->name('stok.update');
         Route::delete('/stok-benih/{id}', [StokBenihController::class, 'destroy'])->name('stok.destroy');
