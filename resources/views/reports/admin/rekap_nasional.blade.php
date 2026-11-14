@@ -3,9 +3,22 @@
 @section('title', 'Rekapitulasi Stok Benih Nasional - SIPANEN')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange {
+        background: #106742 !important;
+        border-color: #106742 !important;
+    }
+    .flatpickr-day.inRange {
+        background: #d1fae5 !important;
+        border-color: #d1fae5 !important;
+        box-shadow: -5px 0 0 #d1fae5, 5px 0 0 #d1fae5 !important;
+        color: #065f46 !important;
+    }
+</style>
+
 <div class="container-fluid px-4 py-3">
 
-    <!-- HEADER & TOMBOL EXPORT -->
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <div>
             <h3 class="fw-bold mb-1" style="color: #106742;">Rekapitulasi Stok Benih Nasional (Lingkup BBPSIP)</h3>
@@ -22,14 +35,16 @@
         </div>
     </div>
 
-    <!-- FILTER TANGGAL -->
     <div class="card border-0 shadow-sm mb-3" style="border-radius: 12px;">
         <div class="card-body py-3 px-4">
             <form action="{{ route('admin.report.rekap') }}" method="GET" class="row g-2 align-items-center">
+                <input type="hidden" name="start_date" id="startDate" value="{{ $start->format('Y-m-d') }}">
+                <input type="hidden" name="end_date" id="endDate" value="{{ $end->format('Y-m-d') }}">
+
                 <div class="col-md-5">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-calendar3"></i></span>
-                        <input type="date" name="start_date" class="form-control border-start-0" value="{{ request('start_date', $start->format('Y-m-d')) }}">
+                        <input type="text" id="dateRangePicker" class="form-control border-start-0 bg-white" value="{{ $start->format('Y-m-d') }} to {{ $end->format('Y-m-d') }}" readonly style="cursor: pointer;">
                     </div>
                 </div>
                 <div class="col-md-2">
@@ -46,7 +61,6 @@
         </div>
     </div>
 
-    <!-- TABEL REKAPITULASI -->
     <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
         <div class="card-body p-0">
             <div class="table-responsive" style="max-height: 72vh; overflow-x: auto; overflow-y: auto;">
@@ -153,4 +167,26 @@
     </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    const startInput = document.getElementById('startDate');
+    const endInput   = document.getElementById('endDate');
+
+    flatpickr("#dateRangePicker", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        defaultDate: [startInput.value, endInput.value],
+        onChange: function(selectedDates, dateStr, instance) {
+            if (selectedDates.length === 1) {
+                const d1 = instance.formatDate(selectedDates[0], "Y-m-d");
+                startInput.value = d1;
+                endInput.value   = d1;
+            } else if (selectedDates.length === 2) {
+                startInput.value = instance.formatDate(selectedDates[0], "Y-m-d");
+                endInput.value   = instance.formatDate(selectedDates[1], "Y-m-d");
+            }
+        }
+    });
+</script>
 @endsection
