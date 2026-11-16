@@ -14,7 +14,7 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        if (str_contains(request()->getHost(), 'trycloudflare.com')) {
+        if (config('app.env') === 'production' || str_contains(request()->getHost(), 'trycloudflare.com')) {
             URL::forceScheme('https');
         }
     }

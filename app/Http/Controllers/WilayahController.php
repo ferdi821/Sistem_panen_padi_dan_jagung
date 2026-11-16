@@ -41,6 +41,10 @@ class WilayahController extends Controller
     {
         $user = Auth::user();
 
+        if (!$user->hasRole('petugas_provinsi')) {
+            abort(403, 'Hanya Petugas Provinsi yang dapat menambah data wilayah baru.');
+        }
+
         if ($user->hasRole('petugas_provinsi')) {
             $request->merge(['provinsi_id' => $user->provinsi_id]);
         }

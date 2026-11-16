@@ -82,9 +82,9 @@
                             <th class="text-start py-3">Kabupaten/Kota</th>
                             <th class="text-start py-3">Nama Gudang / Balai</th>
                             <th class="py-3">Kapasitas (Ton)</th>
-                            @role('petugas_provinsi')
+                            @hasanyrole('admin_pusat|petugas_provinsi')
                                 <th class="py-3">Aksi</th>
-                            @endrole
+                            @endhasanyrole
                         </tr>
                     </thead>
                     <tbody>
@@ -101,7 +101,7 @@
                                         {{ number_format($item->kapasitas_ton, 0) }} Ton
                                     </span>
                                 </td>
-                                @role('petugas_provinsi')
+                                @hasanyrole('admin_pusat|petugas_provinsi')
                                     <td>
                                         <!-- BUTTON EDIT MODAL POPUP -->
                                         <button type="button" class="btn btn-sm btn-outline-warning px-2 py-1 me-1" data-bs-toggle="modal" data-bs-target="#modalEditWilayah{{ $item->id }}" style="font-size: 11px; font-weight: 600;">
@@ -114,10 +114,10 @@
                                             <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1" style="font-size: 11px; font-weight: 600;">Hapus</button>
                                         </form>
                                     </td>
-                                @endrole
+                                @endhasanyrole
                             </tr>
 
-                            @role('petugas_provinsi')
+                            @hasanyrole('admin_pusat|petugas_provinsi')
                                 <!-- MODAL EDIT WILAYAH PER BARIS DATA -->
                                 <div class="modal fade" id="modalEditWilayah{{ $item->id }}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered">
@@ -179,10 +179,10 @@
                                         </div>
                                     </div>
                                 </div>
-                            @endrole
+                            @endhasanyrole
                         @empty
                             <tr>
-                                <td colspan="{{ auth()->user()->hasRole('petugas_provinsi') ? 6 : 5 }}" class="py-4 text-muted">Belum ada data wilayah / gudang BPSIP.</td>
+                                <td colspan="{{ auth()->user()->hasAnyRole(['admin_pusat', 'petugas_provinsi']) ? 6 : 5 }}" class="py-4 text-muted">Belum ada data wilayah / gudang BPSIP.</td>
                             </tr>
                         @endforelse
                     </tbody>

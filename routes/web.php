@@ -34,10 +34,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/stok-benih', [StokBenihController::class, 'index'])->name('stok.index');
     Route::get('/stok-benih/riwayat', [StokBenihController::class, 'riwayatMutasi'])->name('stok.riwayat');
 
-    // View-only Master Data Varietas & Wilayah untuk Admin Pusat & Petugas Provinsi
+    // View-only & Moderasi Master Data Varietas & Wilayah untuk Admin Pusat & Petugas Provinsi
     Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
         Route::get('/benih', [BenihController::class, 'index'])->name('benih.index');
         Route::get('/wilayah', [WilayahController::class, 'index'])->name('wilayah.index');
+        Route::put('/wilayah/{wilayah}', [WilayahController::class, 'update'])->name('wilayah.update');
+        Route::delete('/wilayah/{wilayah}', [WilayahController::class, 'destroy'])->name('wilayah.destroy');
     });
 
     // Admin Pusat Management & Laporan Rekap Nasional
@@ -70,8 +72,8 @@ Route::middleware(['auth'])->group(function () {
         // CRUD Master Benih (Khusus Petugas)
         Route::resource('benih', BenihController::class)->except(['index', 'show']);
 
-        // CRUD Master Wilayah & Gudang (Khusus Petugas)
-        Route::resource('wilayah', WilayahController::class)->except(['index', 'create', 'edit', 'show']);
+        // Tambah Master Wilayah & Gudang (Khusus Petugas)
+        Route::post('/wilayah', [WilayahController::class, 'store'])->name('wilayah.store');
 
         // CRUD Data Panen (Khusus Petugas)
         Route::post('/panen', [PanenController::class, 'store'])->name('panen.store');
