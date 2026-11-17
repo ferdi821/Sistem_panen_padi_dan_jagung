@@ -6,12 +6,14 @@ use App\Models\CatatanPanen;
 use App\Models\StokBenih;
 use App\Models\TransaksiStokBenih;
 use App\Models\Benih;
+use App\Models\Provinsi;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = auth()->user();
 
@@ -19,6 +21,17 @@ class DashboardController extends Controller
         $queryPanen = CatatanPanen::query();
         $queryStok = StokBenih::query();
         $queryTransaksi = TransaksiStokBenih::query();
+
+        // Filter wilayah dinamis khusus Pimpinan
+        $selectedProvinsiId = null;
+        if ($user->hasRole('pimpinan') && $request->filled('provinsi_id')) {
+            $selectedProvinsiId = $request->provinsi_id;
+            $queryPanen->where('provinsi_id', $selectedProvinsiId);
+            $queryStok->where('provinsi_id', $selectedProvinsiId);
+            $queryTransaksi->whereHas('stokBenih', function ($q) use ($selectedProvinsiId) {
+                $q->where('provinsi_id', $selectedProvinsiId);
+            });
+        }
 
         // Isolasi data khusus Petugas Provinsi
         if ($user->hasRole('petugas_provinsi') && $user->provinsi_id) {
@@ -29,12 +42,12 @@ class DashboardController extends Controller
             });
         }
 
-        // 1. Total Produksi Padi (Menjumlahkan jumlah_panen_ton khusus komoditas PADI)
+        // 1. Total Produksi Padi
         $totalPadiTon = (clone $queryPanen)
             ->whereRaw('LOWER(komoditas) = ?', ['padi'])
             ->sum('jumlah_panen_ton');
 
-        // 2. Total Produksi Jagung (Menjumlahkan jumlah_panen_ton khusus komoditas JAGUNG)
+        // 2. Total Produksi Jagung
         $totalJagungTon = (clone $queryPanen)
             ->whereRaw('LOWER(komoditas) = ?', ['jagung'])
             ->sum('jumlah_panen_ton');
@@ -66,9 +79,7 @@ class DashboardController extends Controller
         $riwayatTerbaru = (clone $queryTransaksi)->with(['stokBenih.benih', 'stokBenih.provinsi', 'user'])->latest()->take(5)->get();
         $panenTerbaru = (clone $queryPanen)->with('provinsi')->latest()->take(5)->get();
 
-        // -------------------------------------------------------------
         // PENGELOMPOKAN DATA GRAFIK TREN PRODUKSI NASIONAL DINAMIS
-        // -------------------------------------------------------------
         $tahunIni = date('Y');
         $trenPadi = array_fill(1, 12, 0);
         $trenJagung = array_fill(1, 12, 0);
@@ -91,7 +102,6 @@ class DashboardController extends Controller
             }
         }
 
-        // Batasi grafik hanya sampai bulan aktif saat ini
         $bulanAktif = (int) date('n'); 
         $labelsBulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         
@@ -99,9 +109,7 @@ class DashboardController extends Controller
         $dataPadiFinal = array_slice(array_values($trenPadi), 0, $bulanAktif);
         $dataJagungFinal = array_slice(array_values($trenJagung), 0, $bulanAktif);
 
-        // -------------------------------------------------------------
         // PEMISAHAN VIEW BERDASARKAN ROLE USER
-        // -------------------------------------------------------------
         if ($user->hasRole('petugas_provinsi')) {
             $namaProvinsi = $user->provinsi->nama_provinsi ?? 'Wilayah Saya';
 
@@ -121,7 +129,82 @@ class DashboardController extends Controller
             ));
         }
 
-        // Default: Admin Pusat & Role Lainnya ke dashboard.index
+        if ($user->hasRole('pimpinan')) {
+            $provinsis = Provinsi::orderBy('nama_provinsi')->get();
+
+            // Hitung Rata-rata Produktivitas (Ton/Ha)
+            $produktivitasRataRata = 0;
+            if (Schema::hasColumn('catatan_panens', 'luas_lahan_hektar')) {
+                $totalLuasHa = (clone $queryPanen)->sum('luas_lahan_hektar');
+                $totalPanenSemua = $totalPadiTon + $totalJagungTon;
+                $produktivitasRataRata = $totalLuasHa > 0 ? ($totalPanenSemua / $totalLuasHa) : 0;
+            }
+
+            // Rekap Kontribusi & Produktivitas Per Provinsi
+            $rekapProvinsi = (clone $queryPanen)
+                ->with('provinsi')
+                ->select(
+                    'provinsi_id',
+                    DB::raw("SUM(luas_lahan_hektar) as total_luas"),
+                    DB::raw("SUM(CASE WHEN LOWER(komoditas) = 'padi' THEN jumlah_panen_ton ELSE 0 END) as total_padi"),
+                    DB::raw("SUM(CASE WHEN LOWER(komoditas) = 'jagung' THEN jumlah_panen_ton ELSE 0 END) as total_jagung"),
+                    DB::raw("SUM(jumlah_panen_ton) as total_semua")
+                )
+                ->groupBy('provinsi_id')
+                ->orderByDesc('total_semua')
+                ->take(5)
+                ->get();
+
+            // Peringatan Stok Benih Kritis / Kosong (<= 1 Ton)
+            $stokKritis = (clone $queryStok)
+                ->with(['benih', 'provinsi', 'wilayah'])
+                ->whereRaw('(CASE WHEN jumlah_stok_kg > 100 THEN jumlah_stok_kg / 1000 ELSE jumlah_stok_kg END) <= 1')
+                ->orderByRaw('(CASE WHEN jumlah_stok_kg > 100 THEN jumlah_stok_kg / 1000 ELSE jumlah_stok_kg END) asc')
+                ->take(6)
+                ->get();
+
+            // Evaluasi Realisasi vs Target Stok Benih per Gudang
+            $kolomTarget = collect(['target_stok_kg', 'target_kg', 'target_stok', 'target_benih_kg'])
+                ->first(fn($col) => Schema::hasColumn('stok_benihs', $col));
+
+            $evaluasiStok = (clone $queryStok)
+                ->with(['provinsi', 'wilayah', 'benih'])
+                ->get()
+                ->map(function ($item) use ($kolomTarget) {
+                    $rawRealisasi = (float) ($item->jumlah_stok_kg ?? 0);
+                    $realisasiTon = $rawRealisasi > 100 ? ($rawRealisasi / 1000) : $rawRealisasi;
+
+                    $rawTarget = $kolomTarget ? (float) ($item->{$kolomTarget} ?? 0) : 0;
+                    $targetTon = $rawTarget > 100 ? ($rawTarget / 1000) : $rawTarget;
+
+                    $item->realisasi_ton = $realisasiTon;
+                    $item->target_ton = $targetTon;
+                    $item->persen_capaian = $targetTon > 0
+                        ? min(100, round(($realisasiTon / $targetTon) * 100, 1))
+                        : ($realisasiTon > 0 ? 100 : 0);
+                    return $item;
+                });
+
+            return view('dashboard.pimpinan', compact(
+                'provinsis',
+                'selectedProvinsiId',
+                'totalPadiTon',
+                'totalJagungTon',
+                'totalStokKg',
+                'produktivitasRataRata',
+                'stokMasukKg',
+                'stokKeluarKg',
+                'rekapProvinsi',
+                'stokKritis',
+                'evaluasiStok',
+                'panenTerbaru',
+                'labelsFinal',
+                'dataPadiFinal',
+                'dataJagungFinal'
+            ));
+        }
+
+        // Default: Admin Pusat ke dashboard.index
         return view('dashboard.index', compact(
             'totalPadiTon',
             'totalJagungTon',

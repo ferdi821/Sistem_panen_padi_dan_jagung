@@ -28,24 +28,35 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 // Route Authenticated
 Route::middleware(['auth'])->group(function () {
 
-    // Halaman Monitoring Utama (Bisa dilihat Admin Pusat & Petugas Provinsi)
+    // Halaman Monitoring Utama (Admin Pusat, Pimpinan & Petugas Provinsi)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/panen', [PanenController::class, 'index'])->name('panen.index');
     Route::get('/stok-benih', [StokBenihController::class, 'index'])->name('stok.index');
     Route::get('/stok-benih/riwayat', [StokBenihController::class, 'riwayatMutasi'])->name('stok.riwayat');
 
-    // View-only & Moderasi Master Data Varietas & Wilayah untuk Admin Pusat & Petugas Provinsi
-    Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
+    // View-only Master Varietas & Sebaran Wilayah Gudang (Bisa dipantau Pimpinan juga)
+    Route::middleware(['role:admin_pusat|petugas_provinsi|pimpinan'])->group(function () {
         Route::get('/benih', [BenihController::class, 'index'])->name('benih.index');
         Route::get('/wilayah', [WilayahController::class, 'index'])->name('wilayah.index');
+    });
+
+    // Moderasi Edit & Hapus Master Wilayah (Khusus Admin Pusat & Petugas Provinsi)
+    Route::middleware(['role:admin_pusat|petugas_provinsi'])->group(function () {
         Route::put('/wilayah/{wilayah}', [WilayahController::class, 'update'])->name('wilayah.update');
         Route::delete('/wilayah/{wilayah}', [WilayahController::class, 'destroy'])->name('wilayah.destroy');
     });
 
-    // Admin Pusat Management & Laporan Rekap Nasional
+    // Laporan Rekap Nasional & Audit Log (Dapat diakses Admin Pusat & Pimpinan)
+    Route::middleware(['role:admin_pusat|pimpinan'])->group(function () {
+        Route::get('/admin/rekap-bbpsip', [AdminRekapReportController::class, 'index'])->name('admin.report.rekap');
+        Route::get('/admin/rekap-bbpsip/pdf', [AdminRekapReportController::class, 'exportPdf'])->name('admin.report.rekap.pdf');
+        Route::get('/admin/rekap-bbpsip/excel', [AdminRekapReportController::class, 'exportExcel'])->name('admin.report.rekap.excel');
+        Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
+    });
+
+    // Admin Pusat Management
     Route::middleware(['role:admin_pusat'])->group(function () {
         Route::resource('users', UserController::class);
-        Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
         
         // PENGATURAN SISTEM (GET & POST)
         Route::get('/settings', [SystemSettingController::class, 'index'])->name('settings.index');
@@ -55,11 +66,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/stok-benih/riwayat/{id}/edit', [StokBenihController::class, 'editRiwayat'])->name('stok.riwayat.edit');
         Route::put('/stok-benih/riwayat/{id}', [StokBenihController::class, 'updateRiwayat'])->name('stok.riwayat.update');
         Route::delete('/stok-benih/riwayat/{id}', [StokBenihController::class, 'destroyRiwayat'])->name('stok.riwayat.destroy');
-
-        // LAPORAN ADMIN PUSAT (PDF & EXCEL)
-        Route::get('/admin/rekap-bbpsip', [AdminRekapReportController::class, 'index'])->name('admin.report.rekap');
-        Route::get('/admin/rekap-bbpsip/pdf', [AdminRekapReportController::class, 'exportPdf'])->name('admin.report.rekap.pdf');
-        Route::get('/admin/rekap-bbpsip/excel', [AdminRekapReportController::class, 'exportExcel'])->name('admin.report.rekap.excel');
     });
 
     // Petugas Provinsi: Laporan Rekap Wilayah & SEMUA OPERASIONAL INPUT/EDIT/HAPUS

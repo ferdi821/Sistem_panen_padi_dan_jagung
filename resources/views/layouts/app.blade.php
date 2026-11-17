@@ -18,6 +18,8 @@
         $userRoleShort = 'ADMIN';
     } elseif ($userRole === 'PETUGAS_PROVINSI') {
         $userRoleShort = 'PP';
+    } elseif ($userRole === 'PIMPINAN') {
+        $userRoleShort = 'PIMPINAN';
     }
 
     // Deteksi Wilayah Provinsi
@@ -353,70 +355,112 @@
         <nav class="sidebar-nav">
             <a href="{{ Route::has('dashboard') ? route('dashboard') : '#' }}" class="nav-item-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                 <i class="bi bi-speedometer2"></i>
-                <span class="nav-text">Dashboard</span>
+                <span class="nav-text">{{ $userRole === 'PIMPINAN' ? 'Executive Dashboard' : 'Dashboard' }}</span>
             </a>
 
-            <div class="sidebar-category">MASTER DATA</div>
-            
-            @hasrole('admin_pusat')
-            <a href="{{ Route::has('users.index') ? route('users.index') : '#' }}" class="nav-item-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
-                <i class="bi bi-people"></i>
-                <span class="nav-text">Manajemen User</span>
-            </a>
-            @endhasrole
+            @if($userRole === 'PIMPINAN')
+                <!-- SIDEBAR KHUSUS ROLE PIMPINAN (EKSEKUTIF & MONITORING) -->
+                <div class="sidebar-category">MONITORING NASIONAL</div>
+                <a href="{{ Route::has('dashboard') ? route('dashboard') . '#analisis-capaian' : '#' }}" class="nav-item-link">
+                    <i class="bi bi-bullseye"></i>
+                    <span class="nav-text">Analisis Capaian & Target</span>
+                </a>
+                <a href="{{ Route::has('panen.index') ? route('panen.index') : '#' }}" class="nav-item-link {{ request()->routeIs('panen.*') ? 'active' : '' }}">
+                    <i class="bi bi-journal-text"></i>
+                    <span class="nav-text">Monitoring Hasil Panen</span>
+                </a>
+                <a href="{{ Route::has('stok.index') ? route('stok.index') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.index') ? 'active' : '' }}">
+                    <i class="bi bi-boxes"></i>
+                    <span class="nav-text">Stok Benih Wilayah</span>
+                </a>
+                <a href="{{ Route::has('stok.riwayat') ? route('stok.riwayat') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.riwayat') ? 'active' : '' }}">
+                    <i class="bi bi-clock-history"></i>
+                    <span class="nav-text">Riwayat Distribusi Benih</span>
+                </a>
 
-            @hasanyrole('admin_pusat|petugas_provinsi')
-            <a href="{{ Route::has('benih.index') ? route('benih.index') : '#' }}" class="nav-item-link {{ request()->routeIs('benih.*') ? 'active' : '' }}">
-                <i class="bi bi-tags"></i>
-                <span class="nav-text">Varietas & Komoditas</span>
-            </a>
-            <a href="{{ Route::has('wilayah.index') ? route('wilayah.index') : '#' }}" class="nav-item-link {{ request()->routeIs('wilayah.*') ? 'active' : '' }}">
-                <i class="bi bi-geo-alt"></i>
-                <span class="nav-text">Wilayah & Gudang BPSIP</span>
-            </a>
-            @endhasanyrole
+                <div class="sidebar-category">PEMETAAN & VARIETAS</div>
+                <a href="{{ Route::has('wilayah.index') ? route('wilayah.index') : '#' }}" class="nav-item-link {{ request()->routeIs('wilayah.*') ? 'active' : '' }}">
+                    <i class="bi bi-geo-alt"></i>
+                    <span class="nav-text">Sebaran Gudang BPSIP</span>
+                </a>
+                <a href="{{ Route::has('benih.index') ? route('benih.index') : '#' }}" class="nav-item-link {{ request()->routeIs('benih.*') ? 'active' : '' }}">
+                    <i class="bi bi-tags"></i>
+                    <span class="nav-text">Katalog Varietas Benih</span>
+                </a>
 
-            <div class="sidebar-category">DATA & TRANSAKSI</div>
-            <a href="{{ Route::has('panen.index') ? route('panen.index') : '#' }}" class="nav-item-link {{ request()->routeIs('panen.*') ? 'active' : '' }}">
-                <i class="bi bi-journal-text"></i>
-                <span class="nav-text">Data Panen</span>
-            </a>
-            <a href="{{ Route::has('stok.index') ? route('stok.index') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.index') ? 'active' : '' }}">
-                <i class="bi bi-boxes"></i>
-                <span class="nav-text">Stok Benih Wilayah</span>
-            </a>
-            <a href="{{ Route::has('stok.riwayat') ? route('stok.riwayat') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.riwayat') ? 'active' : '' }}">
-                <i class="bi bi-clock-history"></i>
-                <span class="nav-text">Riwayat Mutasi</span>
-            </a>
+                <div class="sidebar-category">LAPORAN EKSEKUTIF</div>
+                <a href="{{ Route::has('admin.report.rekap') ? route('admin.report.rekap') : '#' }}" class="nav-item-link {{ request()->routeIs('admin.report.*') ? 'active' : '' }}">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span class="nav-text">Rekap BBPSIP Nasional</span>
+                </a>
+                <a href="{{ Route::has('logs.index') ? route('logs.index') : '#' }}" class="nav-item-link {{ request()->routeIs('logs.*') ? 'active' : '' }}">
+                    <i class="bi bi-shield-check"></i>
+                    <span class="nav-text">Audit Aktivitas Sistem</span>
+                </a>
+            @else
+                <!-- SIDEBAR ADMIN PUSAT & PETUGAS PROVINSI (TIDAK DIUBAH) -->
+                <div class="sidebar-category">MASTER DATA</div>
+                
+                @hasrole('admin_pusat')
+                <a href="{{ Route::has('users.index') ? route('users.index') : '#' }}" class="nav-item-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
+                    <i class="bi bi-people"></i>
+                    <span class="nav-text">Manajemen User</span>
+                </a>
+                @endhasrole
 
-            <div class="sidebar-category">LAPORAN</div>
+                @hasanyrole('admin_pusat|petugas_provinsi')
+                <a href="{{ Route::has('benih.index') ? route('benih.index') : '#' }}" class="nav-item-link {{ request()->routeIs('benih.*') ? 'active' : '' }}">
+                    <i class="bi bi-tags"></i>
+                    <span class="nav-text">Varietas & Komoditas</span>
+                </a>
+                <a href="{{ Route::has('wilayah.index') ? route('wilayah.index') : '#' }}" class="nav-item-link {{ request()->routeIs('wilayah.*') ? 'active' : '' }}">
+                    <i class="bi bi-geo-alt"></i>
+                    <span class="nav-text">Wilayah & Gudang BPSIP</span>
+                </a>
+                @endhasanyrole
 
-            @hasrole('admin_pusat')
-            <a href="{{ Route::has('admin.report.rekap') ? route('admin.report.rekap') : '#' }}" class="nav-item-link {{ request()->routeIs('admin.report.*') ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-bar-graph"></i>
-                <span class="nav-text">Rekap BBPSIP Nasional</span>
-            </a>
-            @endhasrole
+                <div class="sidebar-category">DATA & TRANSAKSI</div>
+                <a href="{{ Route::has('panen.index') ? route('panen.index') : '#' }}" class="nav-item-link {{ request()->routeIs('panen.*') ? 'active' : '' }}">
+                    <i class="bi bi-journal-text"></i>
+                    <span class="nav-text">Data Panen</span>
+                </a>
+                <a href="{{ Route::has('stok.index') ? route('stok.index') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.index') ? 'active' : '' }}">
+                    <i class="bi bi-boxes"></i>
+                    <span class="nav-text">Stok Benih Wilayah</span>
+                </a>
+                <a href="{{ Route::has('stok.riwayat') ? route('stok.riwayat') : '#' }}" class="nav-item-link {{ request()->routeIs('stok.riwayat') ? 'active' : '' }}">
+                    <i class="bi bi-clock-history"></i>
+                    <span class="nav-text">Riwayat Mutasi</span>
+                </a>
 
-            @hasrole('petugas_provinsi')
-            <a href="{{ Route::has('petugas.report.rekap') ? route('petugas.report.rekap') : '#' }}" class="nav-item-link {{ request()->routeIs('petugas.report.*') ? 'active' : '' }}">
-                <i class="bi bi-file-earmark-bar-graph"></i>
-                <span class="nav-text">Rekap Stok Wilayah</span>
-            </a>
-            @endhasrole
+                <div class="sidebar-category">LAPORAN</div>
 
-            @hasrole('admin_pusat')
-            <div class="sidebar-category">SISTEM</div>
-            <a href="{{ Route::has('logs.index') ? route('logs.index') : '#' }}" class="nav-item-link {{ request()->routeIs('logs.*') ? 'active' : '' }}">
-                <i class="bi bi-shield-check"></i>
-                <span class="nav-text">Log Aktivitas</span>
-            </a>
-            <a href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}" class="nav-item-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-                <i class="bi bi-gear"></i>
-                <span class="nav-text">Pengaturan Sistem</span>
-            </a>
-            @endhasrole
+                @hasrole('admin_pusat')
+                <a href="{{ Route::has('admin.report.rekap') ? route('admin.report.rekap') : '#' }}" class="nav-item-link {{ request()->routeIs('admin.report.*') ? 'active' : '' }}">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span class="nav-text">Rekap BBPSIP Nasional</span>
+                </a>
+                @endhasrole
+
+                @hasrole('petugas_provinsi')
+                <a href="{{ Route::has('petugas.report.rekap') ? route('petugas.report.rekap') : '#' }}" class="nav-item-link {{ request()->routeIs('petugas.report.*') ? 'active' : '' }}">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    <span class="nav-text">Rekap Stok Wilayah</span>
+                </a>
+                @endhasrole
+
+                @hasrole('admin_pusat')
+                <div class="sidebar-category">SISTEM</div>
+                <a href="{{ Route::has('logs.index') ? route('logs.index') : '#' }}" class="nav-item-link {{ request()->routeIs('logs.*') ? 'active' : '' }}">
+                    <i class="bi bi-shield-check"></i>
+                    <span class="nav-text">Log Aktivitas</span>
+                </a>
+                <a href="{{ Route::has('settings.index') ? route('settings.index') : '#' }}" class="nav-item-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                    <i class="bi bi-gear"></i>
+                    <span class="nav-text">Pengaturan Sistem</span>
+                </a>
+                @endhasrole
+            @endif
         </nav>
 
         <div class="sidebar-footer">
