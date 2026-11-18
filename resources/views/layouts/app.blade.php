@@ -62,7 +62,7 @@
             --primary-green-hover: #0c5234;
             --bg-light: #f4f7f4;
             --sidebar-width: 260px;
-            --sidebar-collapsed-width: 72px;
+            --sidebar-collapsed-width: 82px;
         }
 
         body {
@@ -92,30 +92,36 @@
         }
 
         .sidebar-header {
-            padding: 1rem;
+            padding: 0.75rem 0.85rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             border-bottom: 1px solid rgba(255, 255, 255, 0.15);
             height: 70px;
             flex-shrink: 0;
+            overflow: hidden;
+            gap: 0.5rem;
         }
 
         .sidebar-brand {
             display: flex;
             align-items: center;
-            gap: 0.65rem;
+            gap: 0.6rem;
             text-decoration: none;
             color: #ffffff;
             overflow: hidden;
+            min-width: 0;
         }
 
         .sidebar-brand-img {
-            height: 40px;
-            width: auto;
-            max-width: 45px;
+            height: 38px;
+            width: 38px;
+            min-width: 38px;
             object-fit: contain;
             flex-shrink: 0;
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 2px;
         }
 
         .sidebar-brand-text {
@@ -123,6 +129,39 @@
             flex-direction: column;
             line-height: 1.2;
             white-space: nowrap;
+            transition: opacity 0.2s ease;
+            min-width: 0;
+        }
+
+        /* Tombol Garis Tiga (Persis Gaya Referensi CTC) */
+        #sidebarToggle {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #sidebarToggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* KONDISI SAAT SIDEBAR COLLAPSED (LOGO + GARIS 3 BERDAMPINGAN DI ATAS) */
+        #sidebar.collapsed .sidebar-header {
+            justify-content: space-between;
+            padding: 0.75rem 0.45rem;
+            gap: 4px;
+        }
+
+        #sidebar.collapsed .sidebar-brand {
+            gap: 0;
         }
 
         #sidebar.collapsed .sidebar-brand-text,
@@ -131,6 +170,32 @@
         #sidebar.collapsed .user-info-text,
         #sidebar.collapsed .scope-badge {
             display: none !important;
+        }
+
+        #sidebar.collapsed .sidebar-brand-img {
+            height: 34px;
+            width: 34px;
+            min-width: 34px;
+            padding: 1px;
+        }
+
+        #sidebar.collapsed #sidebarToggle {
+            width: 32px;
+            height: 34px;
+            padding: 0;
+        }
+
+        #sidebar.collapsed .sidebar-footer {
+            padding: 0.75rem 0.25rem;
+        }
+
+        #sidebar.collapsed .user-card {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 0;
+            background: transparent;
+            gap: 0.5rem;
         }
 
         .sidebar-nav {
@@ -209,12 +274,6 @@
             color: #ffffff;
         }
 
-        #sidebar.collapsed .user-card {
-            justify-content: center;
-            padding: 0.5rem 0;
-            background: transparent;
-        }
-
         .user-avatar {
             width: 36px;
             height: 36px;
@@ -241,7 +300,7 @@
 
         #main-wrapper {
             margin-left: var(--sidebar-width);
-            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -253,14 +312,25 @@
             width: calc(100% - var(--sidebar-collapsed-width));
         }
 
+        /* Pada layar sempit/HP, main-wrapper selalu menyisakan 82px di kiri agar tidak tergeser keluar layar saat sidebar di-expand */
+        @media (max-width: 991.98px) {
+            #main-wrapper {
+                margin-left: var(--sidebar-collapsed-width) !important;
+                width: calc(100% - var(--sidebar-collapsed-width)) !important;
+            }
+            #sidebar:not(.collapsed) {
+                box-shadow: 6px 0 24px rgba(0, 0, 0, 0.25);
+            }
+        }
+
         .topbar {
             background: #ffffff;
             border-bottom: 1px solid #e9ecef;
-            padding: 0.5rem 0.75rem;
+            padding: 0.5rem 0.85rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            min-height: 60px;
+            min-height: 70px;
         }
 
         .topbar-badge {
@@ -279,59 +349,15 @@
         .badge-full { display: inline-block; }
         .badge-short { display: none; }
 
-        @media (max-width: 400px) {
+        @media (max-width: 576px) {
             .badge-full { display: none !important; }
             .badge-short { display: inline-block !important; }
             .topbar-subtitle { display: none !important; }
-            .topbar { padding: 0.4rem 0.5rem; }
-        }
-
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 1040;
-        }
-
-        @media (max-width: 991.98px) {
-            #sidebar {
-                left: -260px;
-                width: var(--sidebar-width) !important;
-            }
-
-            #sidebar.mobile-show {
-                left: 0;
-            }
-
-            #sidebar.mobile-show + .sidebar-overlay {
-                display: block;
-            }
-
-            #main-wrapper {
-                margin-left: 0 !important;
-                width: 100% !important;
-            }
-
-            .sidebar-brand-text,
-            .sidebar-category,
-            .nav-text,
-            .user-info-text,
-            .scope-badge {
-                display: flex !important;
-            }
-            #sidebar.mobile-show .sidebar-category { display: block !important; }
-            #sidebar.mobile-show .nav-item-link { justify-content: flex-start !important; }
-            #sidebar.mobile-show .nav-item-link i { margin-right: 0.75rem !important; }
+            .topbar { padding: 0.4rem 0.6rem; }
         }
     </style>
 </head>
 <body>
-
-    <div id="sidebarOverlay" class="sidebar-overlay"></div>
 
     <!-- SIDEBAR -->
     <aside id="sidebar">
@@ -347,7 +373,8 @@
                     <small class="text-white-50" style="font-size: 0.65rem;">PT CIPTA TEKNOLOGI CENDEKIA</small>
                 </div>
             </a>
-            <button id="sidebarToggle" class="btn btn-sm btn-outline-light border-0">
+            <!-- TOMBOL GARIS TIGA SELALU TAMPIL DI SEMUA UKURAN LAYAR -->
+            <button id="sidebarToggle" type="button" title="Perkecil / Perlebar Menu">
                 <i class="bi bi-list fs-5"></i>
             </button>
         </div>
@@ -359,7 +386,7 @@
             </a>
 
             @if($userRole === 'PIMPINAN')
-                <!-- SIDEBAR KHUSUS ROLE PIMPINAN (EKSEKUTIF & MONITORING) -->
+                <!-- SIDEBAR KHUSUS ROLE PIMPINAN -->
                 <div class="sidebar-category">MONITORING NASIONAL</div>
                 <a href="{{ Route::has('dashboard') ? route('dashboard') . '#analisis-capaian' : '#' }}" class="nav-item-link">
                     <i class="bi bi-bullseye"></i>
@@ -398,7 +425,7 @@
                     <span class="nav-text">Audit Aktivitas Sistem</span>
                 </a>
             @else
-                <!-- SIDEBAR ADMIN PUSAT & PETUGAS PROVINSI (TIDAK DIUBAH) -->
+                <!-- SIDEBAR ADMIN PUSAT & PETUGAS PROVINSI -->
                 <div class="sidebar-category">MASTER DATA</div>
                 
                 @hasrole('admin_pusat')
@@ -492,11 +519,8 @@
         <!-- TOPBAR HEADER -->
         <header class="topbar flex-nowrap gap-2">
             <div class="d-flex align-items-center gap-2 overflow-hidden" style="min-width: 0;">
-                <button id="mobileSidebarToggle" class="btn btn-sm btn-outline-success d-lg-none rounded-3 flex-shrink-0 px-2 py-1">
-                    <i class="bi bi-list fs-6"></i>
-                </button>
                 <div class="overflow-hidden" style="min-width: 0;">
-                    <h6 class="fw-bold mb-0 text-truncate" style="font-size: clamp(0.78rem, 2.8vw, 0.9rem); line-height: 1.2;">
+                    <h6 class="fw-bold mb-0 text-truncate" style="font-size: clamp(0.78rem, 2.8vw, 0.95rem); line-height: 1.2;">
                         Sistem Informasi Pertanian & Stok Benih
                     </h6>
                     <small class="text-muted text-truncate topbar-subtitle" style="font-size: 0.65rem;">
@@ -542,34 +566,23 @@
         document.addEventListener("DOMContentLoaded", function() {
             const sidebar = document.getElementById("sidebar");
             const sidebarToggle = document.getElementById("sidebarToggle");
-            const mobileSidebarToggle = document.getElementById("mobileSidebarToggle");
-            const sidebarOverlay = document.getElementById("sidebarOverlay");
 
+            // Atur kondisi awal: di layar kecil (< 992px) default collapsed agar konten tetap lega, di layar besar ikuti localStorage
+            if (window.innerWidth < 992) {
+                sidebar.classList.add("collapsed");
+            } else if (localStorage.getItem("sipanen-sidebar-state") === "collapsed") {
+                sidebar.classList.add("collapsed");
+            }
+
+            // Tombol Toggle bekerja di SEMUA ukuran layar (Desktop, Tablet, maupun HP/Split Screen)
             if (sidebarToggle) {
-                sidebarToggle.addEventListener("click", function() {
+                sidebarToggle.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    sidebar.classList.toggle("collapsed");
                     if (window.innerWidth >= 992) {
-                        sidebar.classList.toggle("collapsed");
                         localStorage.setItem("sipanen-sidebar-state", sidebar.classList.contains("collapsed") ? "collapsed" : "expanded");
-                    } else {
-                        sidebar.classList.remove("mobile-show");
                     }
                 });
-            }
-
-            if (mobileSidebarToggle) {
-                mobileSidebarToggle.addEventListener("click", function() {
-                    sidebar.classList.add("mobile-show");
-                });
-            }
-
-            if (sidebarOverlay) {
-                sidebarOverlay.addEventListener("click", function() {
-                    sidebar.classList.remove("mobile-show");
-                });
-            }
-
-            if (window.innerWidth >= 992 && localStorage.getItem("sipanen-sidebar-state") === "collapsed") {
-                sidebar.classList.add("collapsed");
             }
         });
     </script>

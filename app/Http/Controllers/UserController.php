@@ -15,14 +15,16 @@ class UserController extends Controller
         $users = User::with(['roles', 'provinsi'])->latest()->paginate(10);
         
         // Data pendukung untuk Modal Popup di halaman index
-        $roles = Role::all();$provinsis = Provinsi::all();
+        $roles = Role::all();
+        $provinsis = Provinsi::all();
 
         return view('users.index', compact('users', 'roles', 'provinsis'));
     }
 
     public function create()
     {
-        $roles = Role::all();$provinsis = Provinsi::all();
+        $roles = Role::all();
+        $provinsis = Provinsi::all();
         return view('users.create', compact('roles', 'provinsis'));
     }
 
@@ -40,22 +42,28 @@ class UserController extends Controller
             'name'        => $request->name,
             'email'       => $request->email,
             'password'    => Hash::make($request->password),
-            'provinsi_id' => $request->role === 'petugas_provinsi' ?$request->provinsi_id : null,
+            'provinsi_id' => $request->role === 'petugas_provinsi' ? $request->provinsi_id : null,
         ]);
 
         $user->assignRole($request->role);
+
+        ActivityLogController::record(
+            'CREATE',
+            'Menambahkan akun pengguna baru: ' . $user->name . ' (' . $request->role . ')'
+        );
 
         return redirect()->route('users.index')->with('success', 'User baru berhasil ditambahkan.');
     }
 
     public function edit(User $user)
     {
-        $roles = Role::all();$provinsis = Provinsi::all();
-        $userRole =$user->roles->pluck('name')->first();
+        $roles = Role::all();
+        $provinsis = Provinsi::all();
+        $userRole = $user->roles->pluck('name')->first();
         return view('users.edit', compact('user', 'roles', 'provinsis', 'userRole'));
     }
 
-    public function update(Request $request, User$user)
+    public function update(Request $request, User $user)
     {
         $request->validate([
             'name'        => 'required|string|max:255',
@@ -67,15 +75,21 @@ class UserController extends Controller
         $data = [
             'name'        => $request->name,
             'email'       => $request->email,
-            'provinsi_id' => $request->role === 'petugas_provinsi' ?$request->provinsi_id : null,
+            'provinsi_id' => $request->role === 'petugas_provinsi' ? $request->provinsi_id : null,
         ];
 
-        if ($request->filled('password')) {$request->validate(['password' => 'min:8']);
+        if ($request->filled('password')) {
+            $request->validate(['password' => 'min:8']);
             $data['password'] = Hash::make($request->password);
         }
 
         $user->update($data);
         $user->syncRoles([$request->role]);
+
+        ActivityLogController::record(
+            'UPDATE',
+            'Memperbarui data pengguna: ' . $user->name . ' (' . $request->role . ')'
+        );
 
         return redirect()->route('users.index')->with('success', 'Data user berhasil diperbarui.');
     }
@@ -86,7 +100,14 @@ class UserController extends Controller
             return back()->with('error', 'Anda tidak dapat menghapus akun Anda sendiri.');
         }
 
+        $deletedName = $user->name;
         $user->delete();
+
+        ActivityLogController::record(
+            'DELETE',
+            'Menghapus akun pengguna: ' . $deletedName
+        );
+
         return redirect()->route('users.index')->with('success', 'User berhasil dihapus.');
     }
 }

@@ -110,6 +110,11 @@ class StokBenihController extends Controller
 
         $stok->update($validated);
 
+        ActivityLogController::record(
+            'UPDATE',
+            'Memperbarui data stok benih kelas ' . $validated['kelas_benih'] . ' (' . $validated['jumlah_stok_kg'] . ' Ton)'
+        );
+
         return redirect()->route('stok.index')->with('success', 'Data persediaan stok benih berhasil diperbarui!');
     }
 
@@ -122,7 +127,13 @@ class StokBenihController extends Controller
             return back()->with('error', 'Gagal menghapus! Stok ini sudah memiliki riwayat transaksi.');
         }
 
+        $kelas = $stok->kelas_benih;
         $stok->delete();
+
+        ActivityLogController::record(
+            'DELETE',
+            'Menghapus data persediaan stok benih kelas ' . $kelas
+        );
 
         return redirect()->route('stok.index')->with('success', 'Data persediaan stok benih berhasil dihapus!');
     }
@@ -203,6 +214,11 @@ class StokBenihController extends Controller
                 ]);
             }
 
+            ActivityLogController::record(
+                'CREATE',
+                'Input stok masuk kelas ' . $kelas . ' wilayah ' . $wilayah->nama_kabupaten . ' (Total: ' . $totalInputMasuk . ' Ton)'
+            );
+
             return redirect()->route('stok.index')->with('success', 'Data stok benih kelas ' . $kelas . ' berhasil disimpan!');
         });
     }
@@ -244,6 +260,11 @@ class StokBenihController extends Controller
                 'tanggal_transaksi' => $validated['tanggal_transaksi'],
                 'keterangan'        => $validated['keterangan'],
             ]);
+
+            ActivityLogController::record(
+                'CREATE',
+                'Distribusi stok keluar kelas ' . $stok->kelas_benih . ' sebesar ' . $validated['jumlah_kg'] . ' Ton ke ' . $validated['sumber_tujuan']
+            );
 
             return redirect()->route('stok.index')->with('success', 'Distribusi keluar berhasil diproses!');
         });
@@ -323,6 +344,11 @@ class StokBenihController extends Controller
                 'keterangan'        => $validated['keterangan'],
             ]);
 
+            ActivityLogController::record(
+                'UPDATE',
+                'Memperbarui riwayat transaksi mutasi stok (' . strtoupper($transaksi->jenis_transaksi) . ' - ' . $validated['jumlah_kg'] . ' Ton)'
+            );
+
             return redirect()->route('stok.riwayat')->with('success', 'Data transaksi mutasi berhasil diperbarui!');
         });
     }
@@ -346,7 +372,14 @@ class StokBenihController extends Controller
                 }
             }
 
+            $jenis = strtoupper($transaksi->jenis_transaksi);
+            $jumlah = $transaksi->jumlah_kg;
             $transaksi->delete();
+
+            ActivityLogController::record(
+                'DELETE',
+                'Menghapus riwayat transaksi mutasi stok (' . $jenis . ' - ' . $jumlah . ' Ton)'
+            );
 
             return redirect()->route('stok.riwayat')->with('success', 'Riwayat transaksi mutasi berhasil dihapus!');
         });

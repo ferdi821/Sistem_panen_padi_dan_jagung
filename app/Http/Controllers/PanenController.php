@@ -46,6 +46,11 @@ class PanenController extends Controller
             'catatan'          => $validated['catatan'],
         ]);
 
+        ActivityLogController::record(
+            'CREATE',
+            'Menambahkan data panen baru komoditas ' . strtoupper($validated['komoditas']) . ' (' . $validated['jumlah_panen_ton'] . ' Ton)'
+        );
+
         return redirect()->route('panen.index')->with('success', 'Catatan hasil panen berhasil ditambahkan!');
     }
 
@@ -70,13 +75,25 @@ class PanenController extends Controller
             'catatan'          => $validated['catatan'],
         ]);
 
+        ActivityLogController::record(
+            'UPDATE',
+            'Memperbarui data panen komoditas ' . strtoupper($validated['komoditas']) . ' (' . $validated['jumlah_panen_ton'] . ' Ton)'
+        );
+
         return redirect()->route('panen.index')->with('success', 'Catatan hasil panen berhasil diperbarui!');
     }
 
     public function destroy($id)
     {
         $panen = CatatanPanen::findOrFail($id);
+        $komoditas = strtoupper($panen->komoditas);
+        $jumlah = $panen->jumlah_panen_ton;
         $panen->delete();
+
+        ActivityLogController::record(
+            'DELETE',
+            'Menghapus data panen komoditas ' . $komoditas . ' (' . $jumlah . ' Ton)'
+        );
 
         return redirect()->route('panen.index')->with('success', 'Catatan hasil panen berhasil dihapus!');
     }

@@ -3,91 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - SIPANEN & Stok Benih</title>
-    <!-- Bootstrap 5 CSS & Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <title>Login - SIPANEN</title>
+
+    <!-- Bootstrap 5 & Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     
+    <!-- Google Font: Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
+        :root {
+            --primary-green: #146c43;
+            --primary-green-hover: #0f5132;
+            --bg-dark-start: #072b1c;
+            --bg-dark-end: #0d472e;
+        }
+
         body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Plus Jakarta Sans', sans-serif;
             min-height: 100vh;
+            margin: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0;
+            padding: 1.5rem;
+            background-color: var(--bg-dark-start);
+            background-image: 
+                radial-gradient(rgba(255, 255, 255, 0.07) 1.2px, transparent 1.2px),
+                radial-gradient(circle at 50% 20%, #125c3c 0%, #062417 85%);
+            background-size: 26px 26px, 100% 100%;
+            color: #1e293b;
         }
-        .login-card {
+
+        .auth-card {
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 2.5rem 2.25rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+        }
+
+        .logo-badge {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 1.15rem;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #198754 0%, #106742 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.85rem;
+            box-shadow: 0 10px 24px rgba(20, 108, 67, 0.28);
+        }
+
+        .auth-title {
+            font-weight: 800;
+            font-size: 1.45rem;
+            color: #111827;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .auth-subtitle {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--primary-green);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 1.85rem;
+        }
+
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 0.45rem;
+        }
+
+        .input-group-custom {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon-left {
+            position: absolute;
+            left: 1rem;
+            color: #94a3b8;
+            font-size: 1rem;
+            pointer-events: none;
+            z-index: 4;
+        }
+
+        .form-control-custom {
+            width: 100%;
+            height: 46px;
+            padding: 0.65rem 2.75rem 0.65rem 2.75rem;
+            font-size: 0.9rem;
+            color: #1e293b;
+            background-color: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .form-control-custom:focus {
+            outline: none;
+            background-color: #ffffff;
+            border-color: var(--primary-green);
+            box-shadow: 0 0 0 4px rgba(20, 108, 67, 0.12);
+        }
+
+        .form-control-custom::placeholder {
+            color: #94a3b8;
+        }
+
+        .btn-toggle-pw {
+            position: absolute;
+            right: 0.85rem;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 0.25rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            z-index: 4;
+        }
+
+        .btn-toggle-pw:hover {
+            color: #475569;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-green);
+            border-color: var(--primary-green);
+        }
+
+        .link-green {
+            color: var(--primary-green);
+            font-weight: 700;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .link-green:hover {
+            color: var(--primary-green-hover);
+            text-decoration: underline;
+        }
+
+        .btn-submit {
+            width: 100%;
+            height: 48px;
+            background-color: var(--primary-green);
             border: none;
             border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            background: #ffffff;
-        }
-        .login-header {
-            background-color: #154d19;
             color: #ffffff;
-            padding: 25px 20px;
-            text-align: center;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(20, 108, 67, 0.25);
         }
-        .btn-success-custom {
-            background-color: #154d19;
-            border-color: #154d19;
-            color: #fff;
-            padding: 10px;
-            font-weight: 600;
+
+        .btn-submit:hover {
+            background-color: var(--primary-green-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(20, 108, 67, 0.32);
         }
-        .btn-success-custom:hover {
-            background-color: #0d3810;
-            border-color: #0d3810;
-            color: #fff;
+
+        .auth-divider {
+            border-top: 1px solid #f1f5f9;
+            margin: 1.5rem 0 1.25rem;
+        }
+
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 2rem 1.5rem;
+                border-radius: 20px;
+            }
         }
     </style>
 </head>
 <body>
 
-<div class="container d-flex justify-content-center align-items-center">
-    <div class="card login-card">
-        <div class="login-header">
-            <h4 class="mb-1 fw-bold"><i class="bi bi-tree-fill me-2"></i>SIPANEN</h4>
-            <small class="text-white-50">Sistem Informasi Panen & Stok Benih</small>
-        </div>
-        <div class="card-body p-4">
-            
-            @if(session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <small>{{ session('error') }}</small>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            @endif
-
-            <form action="{{ route('login') }}" method="POST">
-                @csrf
-                <div class="mb-3">
-                    <label class="form-label text-secondary fw-semibold">Email</label>
-                    <input type="email" name="email" class="form-control" placeholder="admin@pertanian.go.id" required autofocus>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label text-secondary fw-semibold">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="btn btn-success-custom w-100 mb-3 rounded-3">
-                    <i class="bi bi-box-arrow-in-right me-1"></i> Login
-                </button>
-            </form>
-
-            <div class="text-center mt-2">
-                <small class="text-muted">
-                    Belum memiliki akun? <a href="{{ route('register') }}" class="text-success fw-bold text-decoration-none">Daftar Akun Petugas</a>
-                </small>
+    <div class="auth-card">
+        <div class="text-center">
+            <div class="logo-badge">
+                <i class="bi bi-tree-fill"></i>
             </div>
+            <h1 class="auth-title">SIPANEN</h1>
+            <p class="auth-subtitle">Sistem Informasi Panen & Stok Benih</p>
         </div>
-    </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.bundle.min.js"></script>
+        @if (session('status'))
+            <div class="alert alert-success py-2 px-3 rounded-3 small mb-3">
+                {{ session('status') }}
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="alert alert-danger py-2 px-3 rounded-3 small mb-3">
+                <ul class="mb-0 ps-3">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form method="POST" action="{{ route('login') }}">
+            @csrf
+
+            <!-- Email -->
+            <div class="mb-3">
+                <label for="email" class="form-label">Alamat Email</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-envelope-fill input-icon-left"></i>
+                    <input type="email" 
+                           id="email" 
+                           name="email" 
+                           value="{{ old('email') }}" 
+                           class="form-control-custom @error('email') border-danger @enderror" 
+                           placeholder="petugas@pertanian.go.id" 
+                           required 
+                           autofocus>
+                </div>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+                <label for="password" class="form-label">Kata Sandi</label>
+                <div class="input-group-custom">
+                    <i class="bi bi-lock-fill input-icon-left"></i>
+                    <input type="password" 
+                           id="password" 
+                           name="password" 
+                           class="form-control-custom @error('password') border-danger @enderror" 
+                           placeholder="••••••••" 
+                           required>
+                    <button type="button" class="btn-toggle-pw" onclick="togglePassword('password', 'icon-pw-login')" title="Lihat Kata Sandi">
+                        <i class="bi bi-eye-fill" id="icon-pw-login"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Remember Me & Forgot Password -->
+            <div class="d-flex align-items-center justify-content-between mb-4" style="font-size: 0.82rem;">
+                <div class="form-check m-0">
+                    <input class="form-check-input" type="checkbox" name="remember" id="remember_me">
+                    <label class="form-check-label text-secondary fw-medium" for="remember_me">
+                        Ingat sesi saya
+                    </label>
+                </div>
+                @if (Route::has('password.request'))
+                    <a href="{{ route('password.request') }}" class="link-green">Lupa kata sandi?</a>
+                @endif
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn-submit">
+                <span>Masuk ke Dashboard</span>
+                <i class="bi bi-box-arrow-in-right fs-5"></i>
+            </button>
+        </form>
+
+        <div class="auth-divider"></div>
+
+        <p class="text-center text-secondary mb-0" style="font-size: 0.84rem;">
+            Belum memiliki akses akun? 
+            <a href="{{ route('register') }}" class="link-green">Daftar di sini</a>
+        </p>
+    </div>
+
+    <script>
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye-fill');
+                icon.classList.add('bi-eye-slash-fill');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye-slash-fill');
+                icon.classList.add('bi-eye-fill');
+            }
+        }
+    </script>
 </body>
 </html>

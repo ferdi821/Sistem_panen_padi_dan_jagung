@@ -14,8 +14,8 @@ class ActivityLogController extends Controller
     {
         $user = auth()->user();
 
-        // Admin Pusat melihat seluruh log nasional, Petugas hanya melihat log miliknya sendiri
-        if ($user->hasRole('admin_pusat')) {
+        // Admin Pusat & Pimpinan melihat seluruh log nasional, Petugas hanya melihat log miliknya sendiri
+        if ($user->hasAnyRole(['admin_pusat', 'pimpinan'])) {
             $logs = ActivityLog::with('user')->latest()->paginate(10);
         } else {
             $logs = ActivityLog::with('user')->where('user_id', $user->id)->latest()->paginate(10);
