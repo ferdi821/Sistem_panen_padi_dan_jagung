@@ -43,7 +43,7 @@
     }
 @endphp
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -55,6 +55,14 @@
     
     <!-- Google Font: Plus Jakarta Sans -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Anti-Flicker: Terapkan tema dari localStorage sebelum render -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('sipanen-theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        })();
+    </script>
 
     <style>
         :root {
@@ -68,8 +76,9 @@
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-light);
-            color: #2c3e50;
+            color: #1e293b;
             overflow-x: hidden;
+            transition: background-color 0.25s ease, color 0.25s ease;
         }
 
         /* Sidebar Styling */
@@ -133,7 +142,7 @@
             min-width: 0;
         }
 
-        /* Tombol Garis Tiga (Persis Gaya Referensi CTC) */
+        /* Tombol Garis Tiga */
         #sidebarToggle {
             width: 34px;
             height: 34px;
@@ -153,7 +162,7 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        /* KONDISI SAAT SIDEBAR COLLAPSED (LOGO + GARIS 3 BERDAMPINGAN DI ATAS) */
+        /* KONDISI SAAT SIDEBAR COLLAPSED */
         #sidebar.collapsed .sidebar-header {
             justify-content: space-between;
             padding: 0.75rem 0.45rem;
@@ -214,7 +223,7 @@
             margin: 1.25rem 0 0.5rem 0.75rem;
         }
 
-        .nav-item-link {
+        #sidebar .nav-item-link {
             display: flex;
             align-items: center;
             padding: 0.65rem 0.85rem;
@@ -227,7 +236,7 @@
             transition: all 0.2s ease;
         }
 
-        .nav-item-link i {
+        #sidebar .nav-item-link i {
             font-size: 1.15rem;
             min-width: 24px;
             text-align: center;
@@ -244,18 +253,19 @@
             margin-right: 0;
         }
 
-        .nav-item-link:hover {
-            background-color: rgba(255, 255, 255, 0.15);
-            color: #ffffff;
+        #sidebar .nav-item-link:hover {
+            background-color: rgba(255, 255, 255, 0.15) !important;
+            color: #ffffff !important;
         }
 
-        .nav-item-link.active {
-            background-color: #ffffff;
-            color: #106742;
+        #sidebar .nav-item-link.active {
+            background-color: #ffffff !important;
+            color: #106742 !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
         }
 
-        .nav-item-link.active i {
-            color: #106742;
+        #sidebar .nav-item-link.active i {
+            color: #106742 !important;
         }
 
         .sidebar-footer {
@@ -312,7 +322,6 @@
             width: calc(100% - var(--sidebar-collapsed-width));
         }
 
-        /* Pada layar sempit/HP, main-wrapper selalu menyisakan 82px di kiri agar tidak tergeser keluar layar saat sidebar di-expand */
         @media (max-width: 991.98px) {
             #main-wrapper {
                 margin-left: var(--sidebar-collapsed-width) !important;
@@ -325,12 +334,13 @@
 
         .topbar {
             background: #ffffff;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 1px solid #e2e8f0;
             padding: 0.5rem 0.85rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             min-height: 70px;
+            transition: background-color 0.25s ease, border-color 0.25s ease;
         }
 
         .topbar-badge {
@@ -344,6 +354,35 @@
             gap: 0.3rem;
             white-space: nowrap;
             flex-shrink: 0;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+
+        /* Tombol Switch Mode Gelap / Terang */
+        #themeToggle {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid #cbd5e1;
+            background-color: #f8fafc;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        #themeToggle:hover {
+            background-color: #e2e8f0;
+            transform: rotate(15deg);
+        }
+
+        .global-footer {
+            background-color: #ffffff;
+            border-top: 1px solid #e2e8f0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.02);
+            transition: background-color 0.25s ease, border-color 0.25s ease;
         }
 
         .badge-full { display: inline-block; }
@@ -354,6 +393,237 @@
             .badge-short { display: inline-block !important; }
             .topbar-subtitle { display: none !important; }
             .topbar { padding: 0.4rem 0.6rem; }
+        }
+
+        /* =========================================================
+           1. MODE TERANG (LIGHT): HALAMAN TERANG, TABEL GELAP ELEGAN
+           ========================================================= */
+        html[data-bs-theme="light"] .card {
+            border: 1px solid #d5e0da !important;
+            box-shadow: 0 2px 10px rgba(16, 103, 66, 0.05);
+        }
+
+        html[data-bs-theme="light"] table {
+            --bs-table-bg: #162033 !important;
+            --bs-table-color: #f8fafc !important;
+            --bs-table-border-color: #2f3f5e !important;
+            color: #f8fafc !important;
+        }
+
+        /* Header polos & header sticky berlatar putih/abu muda (No, Satker, FS, SS) ikut hijau tua */
+        html[data-bs-theme="light"] table thead th:not([style*="background"]),
+        html[data-bs-theme="light"] table thead th[style*="#fff"],
+        html[data-bs-theme="light"] table thead th[style*="#ffffff"],
+        html[data-bs-theme="light"] table thead th[style*="#f8fafc"],
+        html[data-bs-theme="light"] table thead th[style*="#f1f5f9"],
+        html[data-bs-theme="light"] table thead th[style*="white"] {
+            background-color: #0c4d31 !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            border-bottom: 2px solid #1f6e4b !important;
+            border-color: #244739 !important;
+        }
+
+        html[data-bs-theme="light"] table tbody tr:nth-of-type(odd) td:not([style*="background"]) {
+            background-color: #162033 !important;
+            color: #f8fafc !important;
+            border-color: #2f3f5e !important;
+        }
+
+        html[data-bs-theme="light"] table tbody tr:nth-of-type(even) td:not([style*="background"]) {
+            background-color: #1b273e !important;
+            color: #f8fafc !important;
+            border-color: #2f3f5e !important;
+        }
+
+        html[data-bs-theme="light"] table tbody tr:hover td:not([style*="background"]) {
+            background-color: #263654 !important;
+        }
+
+        /* Teks warna di dalam tabel gelap saat Mode Terang */
+        html[data-bs-theme="light"] table tbody td:not([style*="background"]) .text-dark,
+        html[data-bs-theme="light"] table tbody td:not([style*="background"]) span:not(.badge) {
+            color: #f8fafc !important;
+        }
+
+        html[data-bs-theme="light"] table tbody td:not([style*="background"]) .text-success,
+        html[data-bs-theme="light"] table tbody td:not([style*="background"])[class*="text-success"] {
+            color: #34d399 !important;
+        }
+
+        html[data-bs-theme="light"] table code {
+            color: #f472b6 !important;
+        }
+
+        /* Header kategori berwarna pastel pada Rekap BBPSIP tetap kontras */
+        html[data-bs-theme="light"] table thead th[style*="background"]:not([style*="#fff"]):not([style*="#ffffff"]):not([style*="#f8fafc"]):not([style*="#f1f5f9"]):not([style*="white"]),
+        html[data-bs-theme="light"] table tbody td[style*="background"] {
+            color: #1e293b !important;
+        }
+
+        /* =========================================================
+           2. MODE GELAP (DARK): HALAMAN GELAP, TABEL TERANG LEMBUT
+           ========================================================= */
+        html[data-bs-theme="dark"] body {
+            background-color: #0b1120 !important;
+            color: #f8fafc !important;
+        }
+
+        html[data-bs-theme="dark"] #sidebar {
+            background: #0c4d31 !important;
+            border-right-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        html[data-bs-theme="dark"] .topbar {
+            background-color: #111827 !important;
+            border-bottom-color: #243049 !important;
+        }
+
+        html[data-bs-theme="dark"] .topbar h6 {
+            color: #f8fafc !important;
+        }
+
+        html[data-bs-theme="dark"] .topbar-badge {
+            background-color: #1e293b !important;
+            color: #f8fafc !important;
+            border: 1px solid #334155 !important;
+        }
+
+        html[data-bs-theme="dark"] #themeToggle {
+            background-color: #1e293b !important;
+            border-color: #475569 !important;
+            color: #fbbf24 !important;
+        }
+
+        html[data-bs-theme="dark"] #themeToggle:hover {
+            background-color: #334155 !important;
+        }
+
+        /* Card & Container di Mode Gelap (Kecualikan Card Berwarna / KPI Dashboard) */
+        html[data-bs-theme="dark"] .card:not([class*="bg-"]):not([style*="background"]),
+        html[data-bs-theme="dark"] .bg-white {
+            background-color: #162033 !important;
+            border-color: #2c3b57 !important;
+            color: #f8fafc !important;
+        }
+
+        /* Jaga kontras teks pada card KPI kuning & lingkaran ikonnya */
+        html[data-bs-theme="dark"] .bg-warning,
+        html[data-bs-theme="dark"] [style*="#ffc107"],
+        html[data-bs-theme="dark"] [style*="#f59e0b"],
+        html[data-bs-theme="dark"] [style*="#eab308"] {
+            color: #1e293b !important;
+        }
+
+        html[data-bs-theme="dark"] .card-header,
+        html[data-bs-theme="dark"] .card-footer,
+        html[data-bs-theme="dark"] .bg-light {
+            background-color: #1c2840 !important;
+            border-color: #2c3b57 !important;
+            color: #f8fafc !important;
+        }
+
+        /* Judul halaman & teks umum yang hijau gelap dijadikan putih bersih (KECUALI .badge dan isi tabel) */
+        html[data-bs-theme="dark"] main h1,
+        html[data-bs-theme="dark"] main h2,
+        html[data-bs-theme="dark"] main h3,
+        html[data-bs-theme="dark"] main h4,
+        html[data-bs-theme="dark"] main h5,
+        html[data-bs-theme="dark"] .text-dark:not(table *),
+        html[data-bs-theme="dark"] [style*="color: #2c3e50"]:not(.badge):not(table *),
+        html[data-bs-theme="dark"] [style*="color: #1e293b"]:not(.badge):not(table *),
+        html[data-bs-theme="dark"] [style*="color: #333"]:not(.badge):not(table *),
+        html[data-bs-theme="dark"] [style*="color: #106742"]:not(.badge):not(table *),
+        html[data-bs-theme="dark"] [style*="color:#106742"]:not(.badge):not(table *),
+        html[data-bs-theme="dark"] [style*="color: #0d5c3b"]:not(.badge):not(table *),
+        html[data-bs-theme="dark"] [style*="color:#0d5c3b"]:not(.badge):not(table *),
+        html[data-bs-theme="dark"] [style*="color: #0f5132"]:not(.badge):not(table *),
+        html[data-bs-theme="dark"] [style*="color:#0f5132"]:not(.badge):not(table *),
+        html[data-bs-theme="dark"] [style*="color: #155724"]:not(.badge):not(table *),
+        html[data-bs-theme="dark"] [style*="color:#155724"]:not(.badge):not(table *),
+        html[data-bs-theme="dark"] [style*="color: rgb(16, 103, 66)"]:not(.badge):not(table *) {
+            color: #f8fafc !important;
+        }
+
+        html[data-bs-theme="dark"] .text-secondary:not(table *),
+        html[data-bs-theme="dark"] .text-muted:not(table *) {
+            color: #cbd5e1 !important;
+        }
+
+        html[data-bs-theme="dark"] .border,
+        html[data-bs-theme="dark"] .border-top,
+        html[data-bs-theme="dark"] .border-bottom {
+            border-color: #2d3b55 !important;
+        }
+
+        /* Cerahkan teks label/legenda grafik (ApexCharts / SVG) saat Mode Gelap */
+        html[data-bs-theme="dark"] .apexcharts-text tspan,
+        html[data-bs-theme="dark"] .apexcharts-legend-text {
+            fill: #cbd5e1 !important;
+            color: #cbd5e1 !important;
+        }
+
+        /* Tabel Terang Lembut di Mode Gelap (Nyaman di mata & warna Rekap BBPSIP tetap utuh) */
+        html[data-bs-theme="dark"] table {
+            --bs-table-bg: #f8fafc !important;
+            --bs-table-color: #1e293b !important;
+            --bs-table-border-color: #cbd5e1 !important;
+            color: #1e293b !important;
+        }
+
+        html[data-bs-theme="dark"] table thead th:not([style*="background"]) {
+            background-color: #dfece5 !important;
+            color: #0c4d31 !important;
+            font-weight: 700 !important;
+            border-bottom: 2px solid #b8cfc2 !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        html[data-bs-theme="dark"] table tbody tr:nth-of-type(odd) td:not([style*="background"]) {
+            background-color: #f8fafc !important;
+            color: #1e293b !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        html[data-bs-theme="dark"] table tbody tr:nth-of-type(even) td:not([style*="background"]) {
+            background-color: #f1f5f3 !important;
+            color: #1e293b !important;
+            border-color: #cbd5e1 !important;
+        }
+
+        html[data-bs-theme="dark"] table tbody tr:hover td:not([style*="background"]) {
+            background-color: #e4efe9 !important;
+        }
+
+        html[data-bs-theme="dark"] table code {
+            color: #be185d !important;
+        }
+
+        /* Pastikan badge PADI tetap hijau tua tegas di atas latar hijau pastel pada kedua mode */
+        .badge[style*="#d1e7dd"],
+        .badge[style*="#dcfce7"],
+        .badge[style*="#e8f5e9"] {
+            color: #0f5132 !important;
+        }
+
+        /* Input & Select di Mode Gelap */
+        html[data-bs-theme="dark"] .form-control,
+        html[data-bs-theme="dark"] .form-select {
+            background-color: #0f172a !important;
+            border-color: #3b4d6e !important;
+            color: #f8fafc !important;
+        }
+
+        html[data-bs-theme="dark"] .form-control:focus,
+        html[data-bs-theme="dark"] .form-select:focus {
+            background-color: #0f172a !important;
+            border-color: #34d399 !important;
+            color: #ffffff !important;
+        }
+
+        html[data-bs-theme="dark"] .global-footer {
+            background-color: #111827 !important;
+            border-top-color: #243049 !important;
         }
     </style>
 </head>
@@ -529,19 +799,25 @@
                 </div>
             </div>
 
-            <!-- BADGE USER -->
-            <div class="topbar-badge ms-auto flex-shrink-0">
-                <span class="d-none d-md-inline me-1">Halo, {{ $userName }}</span>
-                @if($namaProvinsi)
-                    <span class="badge bg-secondary text-uppercase" style="font-size: 0.6rem;">
-                        <span class="badge-full">{{ $namaProvinsi }}</span>
-                        <span class="badge-short">{{ $namaProvinsiShort }}</span>
+            <!-- TOMBOL DARK/LIGHT MODE + BADGE USER -->
+            <div class="d-flex align-items-center gap-2 ms-auto flex-shrink-0">
+                <button id="themeToggle" type="button" title="Ganti Tema Gelap / Terang">
+                    <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+                </button>
+
+                <div class="topbar-badge">
+                    <span class="d-none d-md-inline me-1">Halo, {{ $userName }}</span>
+                    @if($namaProvinsi)
+                        <span class="badge bg-secondary text-uppercase" style="font-size: 0.6rem;">
+                            <span class="badge-full">{{ $namaProvinsi }}</span>
+                            <span class="badge-short">{{ $namaProvinsiShort }}</span>
+                        </span>
+                    @endif
+                    <span class="badge bg-success text-uppercase" style="background-color: var(--primary-green) !important; font-size: 0.6rem;">
+                        <span class="badge-full">{{ $userRole }}</span>
+                        <span class="badge-short">{{ $userRoleShort }}</span>
                     </span>
-                @endif
-                <span class="badge bg-success text-uppercase" style="background-color: var(--primary-green) !important; font-size: 0.6rem;">
-                    <span class="badge-full">{{ $userRole }}</span>
-                    <span class="badge-short">{{ $userRoleShort }}</span>
-                </span>
+                </div>
             </div>
         </header>
 
@@ -550,9 +826,9 @@
         </main>
 
         <!-- FOOTER GLOBAL SISTEM -->
-        <footer class="mt-auto py-3 bg-white border-top text-center" style="box-shadow: 0 -2px 10px rgba(0,0,0,0.02);">
+        <footer class="mt-auto py-3 global-footer text-center">
             <div class="container-fluid px-4">
-                <p class="mb-0 text-muted small fw-semibold" style="font-size: 12px; color: #6c757d;">
+                <p class="mb-0 text-muted small fw-semibold" style="font-size: 12px;">
                     Sistem Informasi Pertanian & Stok Benih Padi dan Jagung (SIPANEN) &copy; {{ date('Y') }} PT Cipta Teknologi Cendekia. All Rights Reserved.
                 </p>
             </div>
@@ -566,6 +842,9 @@
         document.addEventListener("DOMContentLoaded", function() {
             const sidebar = document.getElementById("sidebar");
             const sidebarToggle = document.getElementById("sidebarToggle");
+            const themeToggle = document.getElementById("themeToggle");
+            const themeIcon = document.getElementById("themeIcon");
+            const htmlEl = document.documentElement;
 
             // Atur kondisi awal: di layar kecil (< 992px) default collapsed agar konten tetap lega, di layar besar ikuti localStorage
             if (window.innerWidth < 992) {
@@ -582,6 +861,31 @@
                     if (window.innerWidth >= 992) {
                         localStorage.setItem("sipanen-sidebar-state", sidebar.classList.contains("collapsed") ? "collapsed" : "expanded");
                     }
+                });
+            }
+
+            // Toggle Mode Gelap / Terang
+            function updateThemeIcon(theme) {
+                if (!themeIcon) return;
+                if (theme === "dark") {
+                    themeIcon.classList.remove("bi-moon-stars-fill");
+                    themeIcon.classList.add("bi-sun-fill");
+                } else {
+                    themeIcon.classList.remove("bi-sun-fill");
+                    themeIcon.classList.add("bi-moon-stars-fill");
+                }
+            }
+
+            updateThemeIcon(htmlEl.getAttribute("data-bs-theme"));
+
+            if (themeToggle) {
+                themeToggle.addEventListener("click", function() {
+                    const currentTheme = htmlEl.getAttribute("data-bs-theme");
+                    const newTheme = currentTheme === "dark" ? "light" : "dark";
+                    htmlEl.setAttribute("data-bs-theme", newTheme);
+                    localStorage.setItem("sipanen-theme", newTheme);
+                    updateThemeIcon(newTheme);
+                    window.dispatchEvent(new CustomEvent("sipanen-theme-changed", { detail: { theme: newTheme } }));
                 });
             }
         });

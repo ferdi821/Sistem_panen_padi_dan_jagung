@@ -187,7 +187,17 @@
         const padiData = {!! json_encode($dataPadiFinal ?? [0,0,0,0,0,0,0,0,0,0,0,0]) !!};
         const jagungData = {!! json_encode($dataJagungFinal ?? [0,0,0,0,0,0,0,0,0,0,0,0]) !!};
 
-        new Chart(ctx, {
+        function getChartColors(theme) {
+            const isDark = theme === 'dark';
+            return {
+                text: isDark ? '#e2e8f0' : '#475569',
+                grid: isDark ? 'rgba(148, 163, 184, 0.15)' : 'rgba(148, 163, 184, 0.25)'
+            };
+        }
+
+        const initialColors = getChartColors(document.documentElement.getAttribute('data-bs-theme'));
+
+        const adminChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: labelsData,
@@ -200,13 +210,36 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'top', labels: { boxWidth: 10, font: { size: 10 } } }
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            boxWidth: 10,
+                            font: { size: 11, weight: '600' },
+                            color: initialColors.text
+                        }
+                    }
                 },
                 scales: {
-                    x: { grid: { display: false } },
-                    y: { beginAtZero: true, grid: { borderDash: [4, 4] } }
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: initialColors.text, font: { size: 11 } }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { borderDash: [4, 4], color: initialColors.grid },
+                        ticks: { color: initialColors.text, font: { size: 11 } }
+                    }
                 }
             }
+        });
+
+        window.addEventListener('sipanen-theme-changed', function (e) {
+            const colors = getChartColors(e.detail.theme);
+            adminChart.options.plugins.legend.labels.color = colors.text;
+            adminChart.options.scales.x.ticks.color = colors.text;
+            adminChart.options.scales.y.ticks.color = colors.text;
+            adminChart.options.scales.y.grid.color = colors.grid;
+            adminChart.update();
         });
     });
 </script>
