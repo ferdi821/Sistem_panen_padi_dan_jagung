@@ -396,73 +396,26 @@
         }
 
         /* =========================================================
-           1. MODE TERANG (LIGHT): HALAMAN TERANG, TABEL GELAP ELEGAN
+           1. MODE TERANG (LIGHT): TAMPILAN NORMAL & FONT HITAM
            ========================================================= */
         html[data-bs-theme="light"] .card {
             border: 1px solid #d5e0da !important;
             box-shadow: 0 2px 10px rgba(16, 103, 66, 0.05);
         }
 
-        html[data-bs-theme="light"] table {
-            --bs-table-bg: #162033 !important;
-            --bs-table-color: #f8fafc !important;
-            --bs-table-border-color: #2f3f5e !important;
-            color: #f8fafc !important;
+        html[data-bs-theme="light"] table,
+        html[data-bs-theme="light"] table thead th:not([style*="color"]),
+        html[data-bs-theme="light"] table tbody td:not([style*="color"]) {
+            color: #1e293b !important;
         }
 
-        /* Header polos & header sticky berlatar putih/abu muda (No, Satker, FS, SS) ikut hijau tua */
-        html[data-bs-theme="light"] table thead th:not([style*="background"]),
-        html[data-bs-theme="light"] table thead th[style*="#fff"],
-        html[data-bs-theme="light"] table thead th[style*="#ffffff"],
-        html[data-bs-theme="light"] table thead th[style*="#f8fafc"],
-        html[data-bs-theme="light"] table thead th[style*="#f1f5f9"],
-        html[data-bs-theme="light"] table thead th[style*="white"] {
-            background-color: #0c4d31 !important;
-            color: #ffffff !important;
-            font-weight: 700 !important;
-            border-bottom: 2px solid #1f6e4b !important;
-            border-color: #244739 !important;
-        }
-
-        html[data-bs-theme="light"] table tbody tr:nth-of-type(odd) td:not([style*="background"]) {
-            background-color: #162033 !important;
-            color: #f8fafc !important;
-            border-color: #2f3f5e !important;
-        }
-
-        html[data-bs-theme="light"] table tbody tr:nth-of-type(even) td:not([style*="background"]) {
-            background-color: #1b273e !important;
-            color: #f8fafc !important;
-            border-color: #2f3f5e !important;
-        }
-
-        html[data-bs-theme="light"] table tbody tr:hover td:not([style*="background"]) {
-            background-color: #263654 !important;
-        }
-
-        /* Teks warna di dalam tabel gelap saat Mode Terang */
-        html[data-bs-theme="light"] table tbody td:not([style*="background"]) .text-dark,
-        html[data-bs-theme="light"] table tbody td:not([style*="background"]) span:not(.badge) {
-            color: #f8fafc !important;
-        }
-
-        html[data-bs-theme="light"] table tbody td:not([style*="background"]) .text-success,
-        html[data-bs-theme="light"] table tbody td:not([style*="background"])[class*="text-success"] {
-            color: #34d399 !important;
-        }
-
-        html[data-bs-theme="light"] table code {
-            color: #f472b6 !important;
-        }
-
-        /* Header kategori berwarna pastel pada Rekap BBPSIP tetap kontras */
-        html[data-bs-theme="light"] table thead th[style*="background"]:not([style*="#fff"]):not([style*="#ffffff"]):not([style*="#f8fafc"]):not([style*="#f1f5f9"]):not([style*="white"]),
-        html[data-bs-theme="light"] table tbody td[style*="background"] {
+        html[data-bs-theme="light"] table tbody td .text-white:not(.badge),
+        html[data-bs-theme="light"] table tbody td .text-light:not(.badge) {
             color: #1e293b !important;
         }
 
         /* =========================================================
-           2. MODE GELAP (DARK): HALAMAN GELAP, TABEL TERANG LEMBUT
+           2. MODE GELAP (DARK): HALAMAN GELAP & FONT TABEL PUTIH
            ========================================================= */
         html[data-bs-theme="dark"] body {
             background-color: #0b1120 !important;
@@ -563,40 +516,35 @@
             color: #cbd5e1 !important;
         }
 
-        /* Tabel Terang Lembut di Mode Gelap (Nyaman di mata & warna Rekap BBPSIP tetap utuh) */
-        html[data-bs-theme="dark"] table {
-            --bs-table-bg: #f8fafc !important;
-            --bs-table-color: #1e293b !important;
-            --bs-table-border-color: #cbd5e1 !important;
+        /* Tabel di Mode Gelap: Background bawaan tema, khusus font teks diubah jadi putih */
+        html[data-bs-theme="dark"] table,
+        html[data-bs-theme="dark"] table thead th:not([style*="background"]),
+        html[data-bs-theme="dark"] table tbody td:not([style*="background"]) {
+            color: #f8fafc !important;
+        }
+
+        html[data-bs-theme="dark"] table tbody td:not([style*="background"]) .text-dark:not(.badge),
+        html[data-bs-theme="dark"] table tbody td:not([style*="background"]) .text-muted:not(.badge),
+        html[data-bs-theme="dark"] table tbody td:not([style*="background"]) .text-secondary:not(.badge),
+        html[data-bs-theme="dark"] table tbody td:not([style*="background"]) .text-success:not(.badge),
+        html[data-bs-theme="dark"] table tbody td:not([style*="background"]) span:not(.badge) {
+            color: #f8fafc !important;
+        }
+
+        /* Sel/Header tabel yang memiliki latar warna pastel (seperti Rekap BBPSIP) tetap kontras */
+        html[data-bs-theme="dark"] table thead th[style*="background"]:not([style*="#fff"]):not([style*="#ffffff"]):not([style*="#f8fafc"]):not([style*="#f1f5f9"]):not([style*="white"]),
+        html[data-bs-theme="dark"] table tbody td[style*="background"] {
             color: #1e293b !important;
         }
 
-        html[data-bs-theme="dark"] table thead th:not([style*="background"]) {
-            background-color: #dfece5 !important;
-            color: #0c4d31 !important;
-            font-weight: 700 !important;
-            border-bottom: 2px solid #b8cfc2 !important;
-            border-color: #cbd5e1 !important;
-        }
-
-        html[data-bs-theme="dark"] table tbody tr:nth-of-type(odd) td:not([style*="background"]) {
-            background-color: #f8fafc !important;
-            color: #1e293b !important;
-            border-color: #cbd5e1 !important;
-        }
-
-        html[data-bs-theme="dark"] table tbody tr:nth-of-type(even) td:not([style*="background"]) {
-            background-color: #f1f5f3 !important;
-            color: #1e293b !important;
-            border-color: #cbd5e1 !important;
-        }
-
-        html[data-bs-theme="dark"] table tbody tr:hover td:not([style*="background"]) {
-            background-color: #e4efe9 !important;
-        }
-
-        html[data-bs-theme="dark"] table code {
-            color: #be185d !important;
+        /* Header sticky berlatar putih/abu muda (No, Satker, FS, SS) di Rekap BBPSIP ikut gelap di Mode Gelap */
+        html[data-bs-theme="dark"] table thead th[style*="#fff"],
+        html[data-bs-theme="dark"] table thead th[style*="#ffffff"],
+        html[data-bs-theme="dark"] table thead th[style*="#f8fafc"],
+        html[data-bs-theme="dark"] table thead th[style*="#f1f5f9"],
+        html[data-bs-theme="dark"] table thead th[style*="white"] {
+            background-color: #1e293b !important;
+            color: #f8fafc !important;
         }
 
         /* Pastikan badge PADI tetap hijau tua tegas di atas latar hijau pastel pada kedua mode */
